@@ -34,6 +34,7 @@ create table if not exists public.inventory (
 create table if not exists public.orders (
   id uuid primary key default gen_random_uuid(),
   order_number text not null unique,
+  tracking_token uuid not null unique default gen_random_uuid(),
   vendor_id uuid not null references public.users(id) on delete restrict,
   customer_id uuid references public.users(id) on delete set null,
   customer_name text,
@@ -84,4 +85,5 @@ alter table public.products enable row level security;
 alter table public.inventory enable row level security;
 alter table public.orders enable row level security;
 alter table public.order_items enable row level security;
+
 
