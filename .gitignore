@@ -1,0 +1,14 @@
+node_modules/
+dist/
+
+# Environment files and local credentials
+.env
+.env.local
+.env.*
+!.env.example
+
+# Private keys and certificate bundles
+*.pem
+*.key
+*.p12
+*.pfx
