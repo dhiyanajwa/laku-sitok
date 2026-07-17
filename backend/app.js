@@ -5,8 +5,11 @@ import advisorRoutes from './routes/advisor.routes.js'
 import agentRoutes from './routes/agent.routes.js'
 import { checkDatabaseConnection } from './services/database.service.js'
 import inventoryRoutes from './routes/inventory.routes.js'
+import marketingRoutes from './routes/marketing.routes.js'
 import orderRoutes from './routes/order.routes.js'
 import productRoutes from './routes/product.routes.js'
+// Facebook Open Graph share route is deferred until Facebook sharing is resumed.
+// import publicShareRoutes from './routes/public-share.routes.js'
 
 const app = express()
 const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:5173'
@@ -14,12 +17,15 @@ const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:5173'
 app.use(cors({ origin: allowedOrigin }))
 app.use(express.json())
 
+// Facebook Open Graph share route is deferred until Facebook sharing is resumed.
+// app.use('/share', publicShareRoutes)
 app.use('/api/agents', agentRoutes)
 app.use('/api/advisor', advisorRoutes)
 app.use('/api/analytics', analyticsRoutes)
 app.use('/api/products', productRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/inventory', inventoryRoutes)
+app.use('/api/marketing', marketingRoutes)
 
 app.get('/api/health', (_request, response) => {
   response.status(200).json({
@@ -49,6 +55,9 @@ app.use((error, _request, response, _next) => {
 })
 
 export default app
+
+
+
 
 
 

@@ -7,6 +7,7 @@ import AdvisorPage from './pages/vendor/AdvisorPage'
 import InventoryPage from './pages/vendor/InventoryPage'
 import KitchenPage from './pages/vendor/KitchenPage'
 import LoginPage from './pages/vendor/LoginPage'
+import MarketingPage from './pages/vendor/MarketingPage'
 import SettingsPage from './pages/vendor/SettingsPage'
 import VendorDashboardPage from './pages/vendor/VendorDashboardPage'
 import VendorOrdersPage from './pages/vendor/VendorOrdersPage'
@@ -24,7 +25,7 @@ function App() {
       <Route path="orders" element={<VendorOrdersPage />} />
       <Route path="kitchen" element={<KitchenPage />} />
       <Route path="inventory" element={<InventoryPage />} />
-      <Route path="advisor" element={<AdvisorPage />} />
+      <Route path="advisor" element={<AdvisorPage />} />`n      <Route path="marketing" element={<MarketingPage />} />
       <Route path="settings" element={<SettingsPage />} />
     </Route></Route>
     <Route path="*" element={<Navigate to="/" replace />} />
@@ -32,3 +33,4 @@ function App() {
 }
 
 export default App
+

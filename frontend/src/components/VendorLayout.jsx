@@ -7,6 +7,7 @@ const navigation = [
   { label: 'Kitchen', to: '/vendor/kitchen' },
   { label: 'Inventory', to: '/vendor/inventory' },
   { label: 'AI Advisor', to: '/vendor/advisor' },
+  { label: 'Marketing', to: '/vendor/marketing' },
   { label: 'Settings', to: '/vendor/settings' },
 ]
 
@@ -37,4 +38,5 @@ function VendorLayout() {
 }
 
 export default VendorLayout
+
 
