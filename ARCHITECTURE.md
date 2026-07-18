@@ -1,11 +1,11 @@
-﻿# Laku Sitok System Architecture
+# Laku Sitok System Architecture
 
 ## Stack
 
 - React + Vite + Material UI frontend
 - Node.js + Express API
 - Supabase PostgreSQL and Supabase Authentication
-- Planned AI: OpenRouter with `poolside/laguna-m.1:free`
+- AI: Qwen through the configured endpoint and model
 
 ## Request Flow
 
@@ -44,7 +44,7 @@ Advisor endpoint
     ↓
 Analytics and inventory summary
     ↓
-OpenRouter: poolside/laguna-m.1:free
+Qwen: configured `QWEN_MODEL`
     ↓
 Concise business recommendation
 ```

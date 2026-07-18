@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Alert, AppBar, Badge, Box, Button, CircularProgress, Container, Dialog, DialogContent, DialogTitle, Grid, Stack, Toolbar, Typography } from '@mui/material'
 import { QRCodeSVG } from 'qrcode.react'
 import { useNavigate } from 'react-router-dom'
@@ -26,7 +26,7 @@ function CustomerMenuPage() {
   useEffect(() => { loadProducts() }, [])
 
   function addToCart(product) {
-    const stock = product.inventory?.quantity || 0
+    const stock = product.availableQuantity ?? product.inventory?.quantity ?? 99
     setCartItems((items) => {
       const existing = items.find((item) => item.id === product.id)
       if (existing) return existing.quantity >= stock ? items : items.map((item) => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item)
@@ -45,7 +45,7 @@ function CustomerMenuPage() {
 
   const trackingUrl = confirmation?.trackingToken ? `${window.location.origin}/track/${confirmation.trackingToken}` : ''
   async function copyTrackingLink() { try { await navigator.clipboard.writeText(trackingUrl); setCopied(true) } catch { setError('We could not copy the tracking link.') } }
-  const visibleProducts = products.filter((product) => product.is_available && (product.inventory?.quantity || 0) > 0)
+  const visibleProducts = products.filter((product) => product.is_available && (product.availableQuantity === null || product.availableQuantity === undefined || product.availableQuantity > 0))
 
   return <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
     <AppBar position="sticky" color="inherit" elevation={0} sx={{ borderBottom: 1, borderColor: 'divider' }}><Toolbar sx={{ justifyContent: 'space-between' }}><Typography variant="h6" color="primary" fontWeight={900}>Laku Sitok</Typography><Button onClick={() => setCartOpen(true)} color="inherit"><Badge badgeContent={itemCount} color="primary" showZero>Cart</Badge></Button></Toolbar></AppBar>
@@ -54,7 +54,7 @@ function CustomerMenuPage() {
       {error && <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>{error}</Alert>}
       {loading ? <Stack alignItems="center" sx={{ py: 8 }} spacing={2}><CircularProgress /><Typography color="text.secondary">Loading menu…</Typography></Stack> : visibleProducts.length === 0 ? <Alert severity="info">There are no available items right now.</Alert> : <Grid container spacing={2}>{visibleProducts.map((product) => <Grid key={product.id} size={{ xs: 12, sm: 6 }}><ProductCard product={product} onAdd={addToCart} /></Grid>)}</Grid>}
     </Container>
-    <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} cartItems={cartItems} customerName={customerName} onCustomerNameChange={setCustomerName} onQuantityChange={changeQuantity} onCheckout={submitOrder} submitting={submitting} />
+    <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} cartItems={cartItems} customerName={customerName} error={error} onCustomerNameChange={setCustomerName} onQuantityChange={changeQuantity} onCheckout={submitOrder} submitting={submitting} />
     <Dialog open={Boolean(confirmation)} onClose={() => setConfirmation(null)} maxWidth="xs" fullWidth>
       <DialogTitle>Order received</DialogTitle><DialogContent><Stack spacing={2.25} alignItems="center" sx={{ pb: 1, textAlign: 'center' }}>
         <Typography color="success.main" sx={{ fontSize: 56, lineHeight: 1 }}>✓</Typography><Typography>Thank you{confirmation?.customerName ? `, ${confirmation.customerName}` : ''}. We have received your order.</Typography>

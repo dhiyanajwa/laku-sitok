@@ -1,4 +1,4 @@
-﻿import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import VendorLayout from './components/VendorLayout'
 import { AuthProvider } from './context/AuthContext'
 import CustomerMenuPage from './pages/CustomerMenuPage'
@@ -25,7 +25,9 @@ function App() {
       <Route path="orders" element={<VendorOrdersPage />} />
       <Route path="kitchen" element={<KitchenPage />} />
       <Route path="inventory" element={<InventoryPage />} />
-      <Route path="advisor" element={<AdvisorPage />} />`n      <Route path="marketing" element={<MarketingPage />} />
+      <Route path="menu-items" element={<Navigate to="/vendor/inventory" replace />} />
+      <Route path="advisor" element={<AdvisorPage />} />
+      <Route path="marketing" element={<MarketingPage />} />
       <Route path="settings" element={<SettingsPage />} />
     </Route></Route>
     <Route path="*" element={<Navigate to="/" replace />} />
@@ -33,4 +35,3 @@ function App() {
 }
 
 export default App
-

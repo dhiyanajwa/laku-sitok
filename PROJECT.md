@@ -1,4 +1,4 @@
-﻿# Laku Sitok Project Specification
+# Laku Sitok Project Specification
 
 ## Vision
 
@@ -25,4 +25,4 @@ Laku Sitok records customer orders, updates stock transactionally, and gives ven
 
 ## Planned AI Advisor
 
-The Phase 7 advisor will use OpenRouter with `poolside/laguna-m.1:free`. The backend will send only a compact analytics and inventory summary; customer names and API keys are never sent to the frontend.
+The Phase 7 advisor uses Qwen through the configured endpoint and model. The backend will send only a compact analytics and inventory summary; customer names and API keys are never sent to the frontend.

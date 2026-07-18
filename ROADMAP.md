@@ -1,4 +1,4 @@
-﻿# Laku Sitok Development Roadmap
+# Laku Sitok Development Roadmap
 
 ## Completed Phases
 
@@ -35,7 +35,7 @@
 - [x] Overall revenue and profit
 - [x] Best seller, seven-day sales chart, and dashboard low-stock alerts
 
-## Phase 7 — OpenRouter Business Advisor
+## Phase 7 — Qwen Business Advisor
 
 ### Objective
 
@@ -43,12 +43,12 @@ Provide grounded, concise recommendations from application data.
 
 ### Planned model
 
-OpenRouter with `poolside/laguna-m.1:free` (Poolside Laguna M.1 Free).
+Qwen through the configured `QWEN_ENDPOINT` and `QWEN_MODEL`.
 
 ### Tasks
 
-- [ ] Configure backend-only `OPENROUTER_API_KEY`
-- [ ] Create a provider adapter and OpenRouter client
+- [ ] Configure backend-only `QWEN_API_KEY`, `QWEN_ENDPOINT`, and `QWEN_MODEL`
+- [ ] Create a provider adapter and Qwen client
 - [ ] Generate a compact analytics and inventory summary
 - [ ] Create concise prompt templates and response limits
 - [ ] Add vendor request limits

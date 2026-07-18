@@ -1,7 +1,18 @@
-﻿import supabase from '../config/supabase.js'
+import supabase from '../config/supabase.js'
 import { appError } from '../utils/app-error.js'
 
 const validStatuses = new Set(['pending', 'preparing', 'ready', 'completed', 'cancelled'])
+const allowedTransitions = {
+  pending: new Set(['preparing', 'cancelled']),
+  preparing: new Set(['ready', 'cancelled']),
+  ready: new Set(['completed']),
+  completed: new Set(),
+  cancelled: new Set(),
+}
+export function getAllowedOrderTransitions(status) {
+  return Array.from(allowedTransitions[status] || [])
+}
+
 const trackingTokenPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 function validateItems(items) {
@@ -42,8 +53,39 @@ export async function getPublicOrderTracking(trackingToken) {
 
 export async function updateOrderStatus(orderId, vendorId, status) {
   if (!validStatuses.has(status)) throw appError('Invalid order status.')
-  const { data, error } = await supabase.from('orders').update({ status }).eq('id', orderId).eq('vendor_id', vendorId).select().single()
-  if (error?.code === 'PGRST116') throw appError('Order not found.', 404)
+
+  const { data: currentOrder, error: currentError } = await supabase
+    .from('orders')
+    .select('id, order_number, status')
+    .eq('id', orderId)
+    .eq('vendor_id', vendorId)
+    .single()
+
+  if (currentError?.code === 'PGRST116') throw appError('Order not found.', 404)
+  if (currentError) throw currentError
+
+  if (currentOrder.status === status) throw appError(`${currentOrder.order_number} is already ${status}.`, 409)
+  if (!allowedTransitions[currentOrder.status]?.has(status)) {
+    throw appError(`Cannot move ${currentOrder.order_number} from ${currentOrder.status} to ${status}.`, 409)
+  }
+
+  if (status === 'completed') {
+    const { data, error } = await supabase.rpc('complete_order_with_stock', { p_order_id: orderId, p_vendor_id: vendorId })
+    if (error?.code === 'P0001' || error?.code === '22023') throw appError(error.message, 409)
+    if (error) throw error
+    return { id: data.id, order_number: data.orderNumber, status: data.status, readyItemRowsUpdated: data.readyItemRowsUpdated, ingredientRowsUpdated: data.ingredientRowsUpdated }
+  }
+
+  const { data, error } = await supabase
+    .from('orders')
+    .update({ status })
+    .eq('id', orderId)
+    .eq('vendor_id', vendorId)
+    .eq('status', currentOrder.status)
+    .select()
+    .single()
+
+  if (error?.code === 'PGRST116') throw appError('This order changed in another session. Refresh and try again.', 409)
   if (error) throw error
   return data
 }

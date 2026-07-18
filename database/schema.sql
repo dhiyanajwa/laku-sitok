@@ -1,4 +1,4 @@
-﻿create extension if not exists pgcrypto;
+create extension if not exists pgcrypto;
 
 create table if not exists public.users (
   id uuid primary key default gen_random_uuid(),
@@ -18,6 +18,7 @@ create table if not exists public.products (
   price numeric(10, 2) not null check (price >= 0),
   cost_price numeric(10, 2) not null default 0 check (cost_price >= 0),
   is_available boolean not null default true,
+  stock_mode text not null default 'ready_item' check (stock_mode in ('ready_item', 'ingredient_recipe')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (vendor_id, name)
@@ -55,10 +56,59 @@ create table if not exists public.order_items (
   subtotal numeric(10, 2) not null check (subtotal >= 0)
 );
 
+
+create table if not exists public.ingredients (
+  id uuid primary key default gen_random_uuid(),
+  vendor_id uuid not null references public.users(id) on delete cascade,
+  name text not null,
+  quantity numeric(12, 2) not null default 0 check (quantity >= 0),
+  unit text not null default 'pieces',
+  reorder_level numeric(12, 2) not null default 0 check (reorder_level >= 0),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (vendor_id, name)
+);
+
+create table if not exists public.product_recipe_ingredients (
+  id uuid primary key default gen_random_uuid(),
+  product_id uuid not null references public.products(id) on delete cascade,
+  ingredient_id uuid not null references public.ingredients(id) on delete restrict,
+  quantity_per_serving numeric(12, 2) not null check (quantity_per_serving > 0),
+  unique (product_id, ingredient_id)
+);
+
+create table if not exists public.ingredient_stock_movements (
+  id uuid primary key default gen_random_uuid(),
+  vendor_id uuid not null references public.users(id) on delete cascade,
+  ingredient_id uuid not null references public.ingredients(id) on delete restrict,
+  change_quantity numeric(12, 2) not null check (change_quantity <> 0),
+  reason text not null check (reason in ('completed_order', 'manual_adjustment', 'restock')),
+  order_id uuid references public.orders(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists ingredients_vendor_id_idx on public.ingredients(vendor_id);
+create index if not exists recipe_ingredients_product_id_idx on public.product_recipe_ingredients(product_id);
+create index if not exists ingredient_movements_ingredient_created_idx on public.ingredient_stock_movements(ingredient_id, created_at desc);
 create index if not exists products_vendor_id_idx on public.products(vendor_id);
 create index if not exists orders_vendor_created_at_idx on public.orders(vendor_id, created_at desc);
 create index if not exists orders_status_idx on public.orders(status);
 create index if not exists order_items_order_id_idx on public.order_items(order_id);
+create table if not exists public.manager_actions (
+  id uuid primary key default gen_random_uuid(),
+  vendor_id uuid not null references public.users(id) on delete cascade,
+  original_request text not null check (char_length(original_request) between 1 and 280),
+  action_type text not null check (action_type in ('ingredient_restock', 'order_status')),
+  payload jsonb not null default '{}'::jsonb,
+  status text not null default 'pending_confirmation' check (status in ('pending_confirmation', 'confirmed', 'cancelled', 'expired', 'failed', 'completed')),
+  expires_at timestamptz not null,
+  confirmed_at timestamptz,
+  completed_at timestamptz,
+  result jsonb,
+  failure_reason text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
 create table if not exists public.marketing_settings (
   vendor_id uuid primary key references public.users(id) on delete cascade,
   brand_tone text not null default 'warm and friendly',
@@ -98,6 +148,8 @@ create table if not exists public.campaign_activity (
   created_at timestamptz not null default now()
 );
 
+create index if not exists manager_actions_vendor_created_idx on public.manager_actions (vendor_id, created_at desc);
+create index if not exists manager_actions_vendor_status_idx on public.manager_actions (vendor_id, status, expires_at);
 create index if not exists marketing_campaigns_vendor_created_idx on public.marketing_campaigns(vendor_id, created_at desc);
 create index if not exists campaign_activity_campaign_created_idx on public.campaign_activity(campaign_id, created_at desc);
 
@@ -121,6 +173,12 @@ create trigger orders_set_updated_at
 before update on public.orders
 for each row execute procedure public.set_updated_at();
 
+drop trigger if exists ingredients_set_updated_at on public.ingredients;
+create trigger ingredients_set_updated_at
+before update on public.ingredients
+for each row execute procedure public.set_updated_at();
+drop trigger if exists manager_actions_set_updated_at on public.manager_actions;
+create trigger manager_actions_set_updated_at before update on public.manager_actions for each row execute procedure public.set_updated_at();
 drop trigger if exists marketing_settings_set_updated_at on public.marketing_settings;
 create trigger marketing_settings_set_updated_at before update on public.marketing_settings for each row execute procedure public.set_updated_at();
 drop trigger if exists marketing_campaigns_set_updated_at on public.marketing_campaigns;
@@ -131,6 +189,10 @@ alter table public.products enable row level security;
 alter table public.inventory enable row level security;
 alter table public.orders enable row level security;
 alter table public.order_items enable row level security;
+alter table public.ingredients enable row level security;
+alter table public.product_recipe_ingredients enable row level security;
+alter table public.ingredient_stock_movements enable row level security;
+alter table public.manager_actions enable row level security;
 alter table public.marketing_settings enable row level security;
 alter table public.marketing_campaigns enable row level security;
 alter table public.campaign_activity enable row level security;

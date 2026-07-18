@@ -1,4 +1,4 @@
-﻿import { createAdvisorCompletion } from './openrouter.service.js'
+import { createAdvisorCompletion } from './qwen.service.js'
 import { appError } from '../utils/app-error.js'
 
 const requestHistory = new Map()

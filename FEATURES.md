@@ -1,4 +1,4 @@
-﻿# Features
+# Features
 
 ## Customer Ordering
 
@@ -34,4 +34,4 @@ The vendor will ask business questions such as:
 - What should I prepare tomorrow?
 - Which product is most profitable?
 
-The planned backend-only provider is OpenRouter using `poolside/laguna-m.1:free`.
+The backend-only provider is Qwen using the configured endpoint and model.

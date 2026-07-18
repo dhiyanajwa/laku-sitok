@@ -1,5 +1,5 @@
-﻿import { getAnalyticsOverview } from '../services/analytics.service.js'
-import { createAdvisorCompletion } from '../services/openrouter.service.js'
+import { getAnalyticsOverview } from '../services/analytics.service.js'
+import { createAdvisorCompletion } from '../services/qwen.service.js'
 import { createMarketingCampaign, getEligibleMarketingProduct, getMarketingSettings } from '../services/marketing.service.js'
 import { appError } from '../utils/app-error.js'
 import { recordAgentActivity } from './activity.agent.js'

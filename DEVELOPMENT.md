@@ -1,4 +1,4 @@
-﻿# Development Rules
+# Development Rules
 
 ## Frontend
 
@@ -10,8 +10,8 @@
 
 - Keep routes, controllers, and services separate.
 - Verify a vendor access token before vendor-only data operations.
-- Keep Supabase service-role and OpenRouter keys in `backend/.env` only.
-- Use `poolside/laguna-m.1:free` through the provider adapter planned for Phase 7.
+- Keep Supabase service-role and Qwen keys in `backend/.env` only.
+- Use Qwen through the backend provider adapter and the configured `QWEN_MODEL`.
 
 ## Style
 

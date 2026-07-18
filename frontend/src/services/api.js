@@ -1,4 +1,4 @@
-﻿import axios from 'axios'
+import axios from 'axios'
 import { supabase } from '../config/supabase'
 
 const api = axios.create({ baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000' })
@@ -13,7 +13,14 @@ export const getHealth = () => api.get('/api/health')
 export const getAnalyticsOverview = () => api.get('/api/analytics/overview')
 export const askAdvisor = (question) => api.post('/api/advisor/ask', { question })
 export const getAgentActivity = () => api.get('/api/agents/activity')
+export const getManagerContext = () => api.get('/api/manager/context')
+export const requestManager = (message) => api.post('/api/manager/request', { message })
+export const getManagerActions = () => api.get('/api/manager/actions')
+export const confirmManagerAction = (actionId) => api.post(`/api/manager/actions/${actionId}/confirm`)
+export const cancelManagerAction = (actionId) => api.post(`/api/manager/actions/${actionId}/cancel`)
 export const getProducts = () => api.get('/api/products')
+export const createProduct = (values) => api.post('/api/products', values)
+export const suggestRecipeDraft = (values) => api.post('/api/products/recipe-draft', values)
 export const createOrder = (order) => api.post('/api/orders', order)
 export const getOrderTracking = (trackingToken) => api.get(`/api/orders/track/${trackingToken}`)
 export const getOrders = () => api.get('/api/orders')
@@ -28,4 +35,10 @@ export const generateMarketingCampaign = (values) => api.post('/api/marketing/ca
 export const updateMarketingCampaign = (campaignId, values) => api.patch(`/api/marketing/campaigns/${campaignId}`, values)
 export const approveMarketingCampaign = (campaignId) => api.post(`/api/marketing/campaigns/${campaignId}/status`, { status: 'approved' })
 export const recordMarketingShare = (campaignId) => api.post(`/api/marketing/campaigns/${campaignId}/share-opened`)
-
+export const getIngredients = () => api.get('/api/inventory/ingredients')
+export const createIngredient = (values) => api.post('/api/inventory/ingredients', values)
+export const updateIngredient = (ingredientId, values) => api.patch(`/api/inventory/ingredients/${ingredientId}`, values)
+export const adjustIngredient = (ingredientId, values) => api.post(`/api/inventory/ingredients/${ingredientId}/adjust`, values)
+export const getIngredientAvailability = () => api.get('/api/inventory/availability')
+export const getRecipe = (productId) => api.get(`/api/inventory/recipes/${productId}`)
+export const updateRecipe = (productId, values) => api.put(`/api/inventory/recipes/${productId}`, values)

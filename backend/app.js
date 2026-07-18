@@ -1,4 +1,4 @@
-﻿import cors from 'cors'
+import cors from 'cors'
 import express from 'express'
 import analyticsRoutes from './routes/analytics.routes.js'
 import advisorRoutes from './routes/advisor.routes.js'
@@ -6,15 +6,26 @@ import agentRoutes from './routes/agent.routes.js'
 import { checkDatabaseConnection } from './services/database.service.js'
 import inventoryRoutes from './routes/inventory.routes.js'
 import marketingRoutes from './routes/marketing.routes.js'
+import managerRoutes from './routes/manager.routes.js'
 import orderRoutes from './routes/order.routes.js'
 import productRoutes from './routes/product.routes.js'
 // Facebook Open Graph share route is deferred until Facebook sharing is resumed.
 // import publicShareRoutes from './routes/public-share.routes.js'
 
 const app = express()
-const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:5173'
+const configuredFrontendOrigin = process.env.FRONTEND_URL || 'http://localhost:5173'
+const allowedFrontendOrigins = new Set([
+  configuredFrontendOrigin,
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+])
 
-app.use(cors({ origin: allowedOrigin }))
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedFrontendOrigins.has(origin)) return callback(null, true)
+    return callback(new Error('This frontend origin is not allowed.'))
+  },
+}))
 app.use(express.json())
 
 // Facebook Open Graph share route is deferred until Facebook sharing is resumed.
@@ -26,6 +37,7 @@ app.use('/api/products', productRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/inventory', inventoryRoutes)
 app.use('/api/marketing', marketingRoutes)
+app.use('/api/manager', managerRoutes)
 
 app.get('/api/health', (_request, response) => {
   response.status(200).json({

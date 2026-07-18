@@ -1,4 +1,5 @@
-﻿import supabase from '../config/supabase.js'
+import supabase from '../config/supabase.js'
+import { listProductAvailability } from './availability.service.js'
 
 const malaysiaDateFormatter = new Intl.DateTimeFormat('en-CA', {
   timeZone: 'Asia/Kuala_Lumpur', year: 'numeric', month: '2-digit', day: '2-digit',
@@ -18,12 +19,15 @@ function dateKeysForLastSevenDays() {
 }
 
 export async function getAnalyticsOverview(vendorId) {
-  const [ordersResult, inventoryResult] = await Promise.all([
+  const [ordersResult, inventoryResult, ingredientsResult, availability] = await Promise.all([
     supabase.from('orders').select('id, total_amount, created_at, order_items(product_name, unit_price, unit_cost, quantity)').eq('vendor_id', vendorId).eq('status', 'completed'),
-    supabase.from('inventory').select('quantity, reorder_level, products(name)').eq('products.vendor_id', vendorId),
+    supabase.from('inventory').select('quantity, reorder_level, products(name, stock_mode)').eq('products.vendor_id', vendorId),
+    supabase.from('ingredients').select('name, quantity, reorder_level, unit').eq('vendor_id', vendorId),
+    listProductAvailability(vendorId),
   ])
   if (ordersResult.error) throw ordersResult.error
   if (inventoryResult.error) throw inventoryResult.error
+  if (ingredientsResult.error) throw ingredientsResult.error
 
   const orders = ordersResult.data || []
   const dayKeys = dateKeysForLastSevenDays()
@@ -58,7 +62,9 @@ export async function getAnalyticsOverview(vendorId) {
     .map(([name, values]) => ({ name, quantity: values.quantity, revenue: Number(values.revenue.toFixed(2)), profit: Number(values.profit.toFixed(2)) }))
     .sort((left, right) => right.profit - left.profit)
 
-  const lowStock = (inventoryResult.data || []).filter((item) => item.quantity <= item.reorder_level).map((item) => ({ name: item.products?.name || 'Unnamed product', quantity: item.quantity, reorderLevel: item.reorder_level }))
+  const lowStock = (inventoryResult.data || []).filter((item) => (item.products?.stock_mode || 'ready_item') === 'ready_item' && item.quantity <= item.reorder_level).map((item) => ({ name: item.products?.name || 'Unnamed product', quantity: item.quantity, reorderLevel: item.reorder_level }))
+  const ingredientLowStock = (ingredientsResult.data || []).filter((item) => Number(item.quantity) <= Number(item.reorder_level)).map((item) => ({ name: item.name, quantity: Number(item.quantity), reorderLevel: Number(item.reorder_level), unit: item.unit }))
+  const canStillMake = availability.filter((item) => item.stockMode === 'ingredient_recipe').map((item) => ({ productId: item.productId, productName: item.productName, estimatedAvailable: item.estimatedAvailable, recipeComplete: item.recipeComplete, limitingIngredients: item.limitingIngredients }))
 
   return {
     today: { revenue: Number(todayRevenue.toFixed(2)), orderCount: todayOrderCount },
@@ -67,6 +73,7 @@ export async function getAnalyticsOverview(vendorId) {
     dailySales: dayKeys.map((date) => ({ date, revenue: Number(salesByDay.get(date).toFixed(2)) })),
     productPerformance,
     lowStock,
+    ingredientLowStock,
+    canStillMake,
   }
 }
-

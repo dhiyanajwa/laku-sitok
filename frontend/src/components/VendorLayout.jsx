@@ -1,4 +1,4 @@
-﻿import { AppBar, Box, Button, Drawer, List, ListItemButton, ListItemText, Toolbar, Typography } from '@mui/material'
+import { AppBar, Box, Button, Drawer, List, ListItemButton, ListItemText, Toolbar, Typography } from '@mui/material'
 import { NavLink, Outlet } from 'react-router-dom'
 
 const navigation = [

@@ -1,4 +1,4 @@
-﻿# Marketing Agent Implementation Plan
+# Marketing Agent Implementation Plan
 
 ## MVP goal
 
@@ -28,7 +28,7 @@ Build this after the live order journey has been migrated and tested. Each phase
 ### Phase 3 — Marketing Agent draft generation
 
 - Add a Marketing Agent that receives verified menu, inventory, and optional sales-summary context from the deterministic agents.
-- Use one OpenRouter call to return structured content: caption, title, call to action, hashtags, selected product, and reason.
+- Use one Qwen call to return structured content: caption, title, call to action, hashtags, selected product, and reason.
 - Revalidate the selected product after generation; reject or revise a draft if its price or stock changed.
 - Rate-limit generation and record the draft-created event in campaign activity.
 

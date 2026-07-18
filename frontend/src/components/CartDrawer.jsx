@@ -1,8 +1,8 @@
-﻿import { Box, Button, Divider, Drawer, IconButton, Stack, TextField, Typography } from '@mui/material'
+import { Alert, Box, Button, Divider, Drawer, IconButton, Stack, TextField, Typography } from '@mui/material'
 
 const formatCurrency = (amount) => new Intl.NumberFormat('en-MY', { style: 'currency', currency: 'MYR' }).format(amount)
 
-function CartDrawer({ cartItems, customerName, onClose, onCustomerNameChange, onQuantityChange, onCheckout, open, submitting }) {
+function CartDrawer({ cartItems, customerName, error, onClose, onCustomerNameChange, onQuantityChange, onCheckout, open, submitting }) {
   const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
 
   return (
@@ -13,6 +13,7 @@ function CartDrawer({ cartItems, customerName, onClose, onCustomerNameChange, on
           <Typography color="text.secondary">Review your items before checkout.</Typography>
         </Box>
         <Divider />
+        {error && <Alert severity="error">{error}</Alert>}
         <Stack spacing={2} sx={{ flex: 1, overflowY: 'auto' }}>
           {cartItems.length === 0 ? (
             <Typography color="text.secondary">Your cart is empty.</Typography>

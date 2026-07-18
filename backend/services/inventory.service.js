@@ -1,16 +1,16 @@
-﻿import supabase from '../config/supabase.js'
+import supabase from '../config/supabase.js'
 import { appError } from '../utils/app-error.js'
 
 export async function listInventory(vendorId) {
   const { data, error } = await supabase
     .from('inventory')
-    .select('id, quantity, reorder_level, updated_at, products!inner(id, name, category, is_available, vendor_id)')
+    .select('id, quantity, reorder_level, updated_at, products!inner(id, name, category, is_available, stock_mode, vendor_id)')
     .eq('products.vendor_id', vendorId)
     .order('updated_at', { ascending: false })
 
   if (error) throw error
 
-  return data.map((item) => ({
+  return (data || []).filter((item) => (item.products.stock_mode || 'ready_item') === 'ready_item').map((item) => ({
     ...item,
     isLowStock: item.quantity <= item.reorder_level,
   }))
