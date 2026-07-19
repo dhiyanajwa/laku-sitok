@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { Alert, Box, Button, Grid, IconButton, Paper, Stack, Typography } from '@mui/material'
 import { getManagerContext, getOrders, updateOrderStatus } from '../../services/api'
+import { playKitchenStatusTone, playNewOrderChime } from '../../services/order-chime'
 
 const columns = [
   {
@@ -92,61 +93,12 @@ function KitchenPage() {
   const [updatingOrderId, setUpdatingOrderId] = useState('')
   const [delayMinutes, setDelayMinutes] = useState(DEFAULT_PREPARATION_MINUTES)
   
-  // Audio state
-  const [audioCtx, setAudioCtx] = useState(null)
-
   const prevOrderIdsRef = useRef(new Set())
 
-  // Web Audio API Synthesis
-  const playSound = (type) => {
-    const isEnabled = localStorage.getItem('kds_sound_enabled') === 'true'
-    if (!isEnabled) return
-    try {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext
-      if (!AudioCtx) return
-      
-      const ctx = audioCtx || new AudioCtx()
-      if (!audioCtx) {
-        setAudioCtx(ctx)
-      }
-      
-      if (ctx.state === 'suspended') {
-        ctx.resume()
-      }
-
-      const osc = ctx.createOscillator()
-      const gainNode = ctx.createGain()
-
-      osc.connect(gainNode)
-      gainNode.connect(ctx.destination)
-
-      const nowTime = ctx.currentTime
-
-      if (type === 'success') {
-        // Crisp service counter bell: triangle wave, 880 Hz, decay 0.6s
-        osc.type = 'triangle'
-        osc.frequency.setValueAtTime(880.00, nowTime)
-        gainNode.gain.setValueAtTime(0.1, nowTime)
-        gainNode.gain.exponentialRampToValueAtTime(0.001, nowTime + 0.6)
-        osc.start(nowTime)
-        osc.stop(nowTime + 0.6)
-      } else {
-        // Warm digital ping: sine wave, 587.33 Hz, decay 0.4s
-        osc.type = 'sine'
-        osc.frequency.setValueAtTime(587.33, nowTime)
-        gainNode.gain.setValueAtTime(0.1, nowTime)
-        gainNode.gain.exponentialRampToValueAtTime(0.001, nowTime + 0.4)
-        osc.start(nowTime)
-        osc.stop(nowTime + 0.4)
-      }
-    } catch (err) {
-      console.warn('[KDS Audio] Failed to play audio:', err)
-    }
-  }
-
-  const triggerNotification = (text, type = 'info') => {
+  const triggerNotification = (text, type = 'info', tone = 'status') => {
+    if (tone === 'new-order') playNewOrderChime()
+    else playKitchenStatusTone(type)
     const id = Date.now() + Math.random().toString(36).substr(2, 9)
-    playSound(type)
     setToasts(prev => [...prev, { id, text, type }])
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id))
@@ -167,7 +119,7 @@ function KitchenPage() {
           if (newPending.length > 0) {
             newPending.forEach(o => {
               const code = getShortCode(o.order_number)
-              triggerNotification(`New Ticket #${code} has arrived in queue!`, 'info')
+              triggerNotification(`New Ticket #${code} has arrived in queue!`, 'info', 'new-order')
             })
           }
         }

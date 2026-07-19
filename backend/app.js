@@ -1,5 +1,6 @@
 import cors from 'cors'
 import express from 'express'
+import helmet from 'helmet'
 import analyticsRoutes from './routes/analytics.routes.js'
 import advisorRoutes from './routes/advisor.routes.js'
 import agentRoutes from './routes/agent.routes.js'
@@ -20,6 +21,29 @@ const allowedFrontendOrigins = new Set([
   'http://localhost:5173',
   'http://127.0.0.1:5173',
 ])
+
+app.disable('x-powered-by')
+
+// Enable this only on a deployment host that sits behind one trusted proxy.
+// It lets the public-order rate limiter use the visitor's real IP address.
+if (process.env.TRUST_PROXY === '1' || process.env.TRUST_PROXY === 'true') {
+  app.set('trust proxy', 1)
+}
+
+// This server only returns API responses. The frontend host should set its own
+// CSP because it knows the scripts, styles, and Supabase connections it serves.
+// Helmet still protects API responses with safe defaults such as nosniff,
+// frame protection, referrer policy, and production-only HSTS.
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  frameguard: { action: 'deny' },
+  hsts: process.env.NODE_ENV === 'production'
+    ? { maxAge: 15_552_000 }
+    : false,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+}))
 
 app.use(cors({
   origin(origin, callback) {

@@ -1,10 +1,14 @@
-import { createProduct, deleteProduct, listProducts, updateProduct } from '../services/product.service.js'
+import { createProduct, deleteProduct, listProducts, listPublicProducts, updateProduct } from '../services/product.service.js'
 import { createRecipeDraft } from '../services/recipe-suggestion.service.js'
 import { getVendorId } from '../services/vendor.service.js'
 
 export async function getProducts(request, response) {
+  response.json({ data: await listProducts(request.vendorId) })
+}
+
+export async function getPublicProducts(request, response) {
   const vendorId = await getVendorId(request.query.vendorId)
-  response.json({ data: await listProducts(vendorId) })
+  response.json({ data: await listPublicProducts(vendorId) })
 }
 
 export async function postProduct(request, response) {

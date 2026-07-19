@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Alert, Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Divider, MenuItem, Paper, Stack, TextField, Typography } from '@mui/material'
-import { createProduct, getIngredients, getProducts, suggestRecipeDraft } from '../../services/api'
+import { createProduct, getIngredients, getVendorProducts, suggestRecipeDraft } from '../../services/api'
 
 const emptyIngredient = () => ({ name: '', quantity: '', unit: 'pieces', reorderLevel: '' })
 const emptyForm = () => ({
@@ -45,7 +45,7 @@ function MenuItemsPage({ embedded = false, onCreated }) {
   async function load() {
     setError('')
     try {
-      const [productsResponse, ingredientsResponse] = await Promise.all([getProducts(), getIngredients()])
+      const [productsResponse, ingredientsResponse] = await Promise.all([getVendorProducts(), getIngredients()])
       setProducts(productsResponse.data.data)
       setIngredients(ingredientsResponse.data.data)
     } catch (requestError) {

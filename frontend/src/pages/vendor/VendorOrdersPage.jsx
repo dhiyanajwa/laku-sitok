@@ -481,7 +481,7 @@ function VendorOrdersPage() {
                       <Stack spacing={0.8}>
                         {order.order_items.map((item) => (
                           <Stack key={item.id} direction="row" justifyContent="space-between" spacing={2}>
-                            <Typography variant="body2" sx={{ color: '#1e293b', fontWeight: 600 }}>
+                            <Typography variant="body2" sx={{ color: 'var(--ls-text)', fontWeight: 700 }}>
                               <Box component="span" sx={{ color: 'var(--ls-text-muted)', fontWeight: 800, mr: 0.5 }}>{item.quantity}x</Box> {item.product_name}
                             </Typography>
                             <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 600 }}>
@@ -574,10 +574,17 @@ function VendorOrdersPage() {
         anchor="right"
         open={!!selectedOrder}
         onClose={() => setSelectedOrder(null)}
+        ModalProps={{ disablePortal: true }}
         slotProps={{
+          backdrop: {
+            sx: { backgroundColor: 'rgba(5, 20, 37, 0.38)' }
+          },
           paper: {
             sx: {
-              width: { xs: '100vw', sm: 460 },
+              width: { xs: '100dvw', sm: 500 },
+              maxWidth: '100vw',
+              left: { xs: 0, sm: 'auto' },
+              height: '100dvh',
               borderLeft: '1px solid #e7edf3',
               bgcolor: 'var(--ls-surface)',
               boxSizing: 'border-box'
@@ -586,7 +593,7 @@ function VendorOrdersPage() {
         }}
       >
         {selectedOrder && (
-          <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', width: '100%' }}>
+          <Box sx={{ height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', width: '100%', bgcolor: 'var(--ls-surface)' }}>
             {/* Drawer Header */}
             <Box
               sx={{
@@ -595,6 +602,7 @@ function VendorOrdersPage() {
                 alignItems: 'center',
                 px: 3.5,
                 py: 3,
+                flexShrink: 0,
                 borderBottom: '1px solid #e7edf3',
                 bgcolor: 'var(--ls-surface-muted)',
                 width: '100%',
@@ -617,7 +625,7 @@ function VendorOrdersPage() {
                   {selectedOrder.order_number}
                 </Typography>
               </Box>
-              <IconButton onClick={() => setSelectedOrder(null)} sx={{ color: 'var(--ls-text-muted)', ml: 'auto' }}>
+              <IconButton aria-label="Close order details" onClick={() => setSelectedOrder(null)} sx={{ color: 'var(--ls-text-muted)', ml: 'auto' }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
@@ -626,7 +634,7 @@ function VendorOrdersPage() {
             </Box>
 
             {/* Drawer Scrollable Content */}
-            <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 3.5, width: '100%', boxSizing: 'border-box' }}>
+            <Box sx={{ flexGrow: 1, minHeight: 0, overflowY: 'auto', p: { xs: 2.5, sm: 3.5 }, width: '100%', boxSizing: 'border-box' }}>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.5, width: '100%' }}>
                 {/* Section 1: Basic Info Grid */}
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%' }}>
@@ -688,7 +696,7 @@ function VendorOrdersPage() {
                     sx={{
                       p: 2.5,
                       bgcolor: 'var(--ls-surface-muted)',
-                      border: '1px solid #eef2f6',
+                      border: '1px solid var(--ls-border-subtle)',
                       borderRadius: 3.5,
                       width: '100%',
                       boxSizing: 'border-box'
@@ -697,16 +705,16 @@ function VendorOrdersPage() {
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, width: '100%' }}>
                       {selectedOrder.order_items.map((item) => (
                         <Box key={item.id} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                          <Typography variant="body2" sx={{ color: '#1e293b', fontWeight: 600 }}>
+                          <Typography variant="body2" sx={{ color: 'var(--ls-text)', fontWeight: 700 }}>
                             <Box component="span" sx={{ color: 'var(--ls-text-muted)', fontWeight: 800, mr: 0.5 }}>{item.quantity}x</Box> {item.product_name}
                           </Typography>
-                          <Typography variant="body2" sx={{ color: '#1e293b', fontWeight: 700 }}>
+                          <Typography variant="body2" sx={{ color: 'var(--ls-text)', fontWeight: 900 }}>
                             RM {Number(item.subtotal || (item.unit_price * item.quantity)).toFixed(2)}
                           </Typography>
                         </Box>
                       ))}
 
-                      <Divider sx={{ borderStyle: 'dotted', my: 0.5, borderColor: '#cbd5e1', width: '100%' }} />
+                      <Divider sx={{ borderStyle: 'dotted', my: 0.5, borderColor: 'var(--ls-border)', width: '100%' }} />
 
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                         <Typography sx={{ color: 'var(--ls-text)', fontWeight: 800, fontSize: 14 }}>

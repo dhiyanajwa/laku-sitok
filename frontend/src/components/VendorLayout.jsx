@@ -3,6 +3,7 @@ import { AppBar, Badge, Box, Button, Divider, Drawer, IconButton, List, ListItem
 import { NavLink, Outlet } from 'react-router-dom'
 import { useThemeMode } from '../context/ThemeModeContext'
 import VendorIcon from './VendorIcon'
+import { playNewOrderChime, primeOrderSound, setOrderSoundEnabled } from '../services/order-chime'
 
 const drawerWidth = 320
 const navigation = [
@@ -33,16 +34,20 @@ function VendorLayout() {
   const [soundEnabled, setSoundEnabled] = useState(localStorage.getItem('kds_sound_enabled') === 'true')
   const { mode, toggleMode } = useThemeMode()
 
-  const handleToggleSound = () => {
+  const primeSoundFromGesture = () => {
+    if (soundEnabled) primeOrderSound().catch(() => {})
+  }
+
+  const handleToggleSound = async () => {
     const nextVal = !soundEnabled
     setSoundEnabled(nextVal)
-    localStorage.setItem('kds_sound_enabled', nextVal ? 'true' : 'false')
-    window.dispatchEvent(new Event('kds-sound-toggle'))
+    setOrderSoundEnabled(nextVal)
+    if (nextVal && await primeOrderSound()) playNewOrderChime({ preview: true })
   }
 
   const modeLabel = mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
 
-  return <Box sx={{ minHeight: '100vh', bgcolor: 'var(--ls-page)', color: 'var(--ls-text)' }}>
+  return <Box onPointerDownCapture={primeSoundFromGesture} sx={{ minHeight: '100vh', bgcolor: 'var(--ls-page)', color: 'var(--ls-text)' }}>
     <Box sx={{ display: { xs: 'none', md: 'block' } }}><Sidebar /></Box>
     <Box sx={{ display: { xs: 'block', md: 'none' } }}><Sidebar mobile open={mobileOpen} onClose={() => setMobileOpen(false)} /></Box>
     <AppBar position="fixed" color="inherit" elevation={0} sx={{ left: { md: drawerWidth }, width: { md: `calc(100% - ${drawerWidth}px)` }, bgcolor: 'var(--ls-surface)', color: 'var(--ls-text)', borderBottom: '1px solid var(--ls-border-subtle)', backdropFilter: 'blur(8px)' }}>
@@ -50,7 +55,7 @@ function VendorLayout() {
         <IconButton onClick={() => setMobileOpen(true)} sx={{ display: { md: 'none' }, mr: 'auto', color: 'var(--ls-text-secondary)' }}><VendorIcon name="dashboard" /></IconButton>
         <Button component={NavLink} to="/menu" variant="outlined" sx={{ borderColor: 'var(--ls-primary)', color: 'var(--ls-primary)', fontWeight: 900, fontSize: { xs: 11, sm: 13 }, borderRadius: 2.5, px: { xs: 1.5, sm: 2.25 }, py: .65, textTransform: 'none', whiteSpace: 'nowrap', '&:hover': { borderColor: 'var(--ls-primary)', bgcolor: 'var(--ls-primary-hover)' } }}>Customer menu</Button>
         <Tooltip title={modeLabel}><IconButton aria-label={modeLabel} onClick={toggleMode} sx={{ width: 42, height: 42, border: '1px solid var(--ls-border)', borderRadius: 2, color: 'var(--ls-purple)', bgcolor: 'var(--ls-purple-soft)', '&:hover': { bgcolor: 'var(--ls-surface-raised)' } }}><VendorIcon name={mode === 'dark' ? 'sun' : 'moon'} size={21} /></IconButton></Tooltip>
-        <Button onClick={handleToggleSound} variant="outlined" sx={{ borderColor: '#f97316', color: '#f97316', fontWeight: 900, fontSize: { xs: 10, sm: 12 }, borderRadius: 2.5, px: { xs: 1.25, sm: 2 }, py: .65, textTransform: 'none', whiteSpace: 'nowrap', '&:hover': { borderColor: '#ea580c', bgcolor: 'rgba(249, 115, 22, 0.08)' } }}>{soundEnabled ? 'SOUND ON' : 'SOUND MUTED'}</Button>
+        <Button onClick={handleToggleSound} variant="outlined" sx={{ borderColor: '#f97316', color: '#f97316', fontWeight: 900, fontSize: { xs: 10, sm: 12 }, borderRadius: 2.5, px: { xs: 1.25, sm: 2 }, py: .65, textTransform: 'none', whiteSpace: 'nowrap', '&:hover': { borderColor: '#ea580c', bgcolor: 'rgba(249, 115, 22, 0.08)' } }}>{soundEnabled ? 'ORDER SOUND ON' : 'ORDER SOUND OFF'}</Button>
         <Divider orientation="vertical" flexItem sx={{ my: 2.2, borderColor: 'var(--ls-border)' }} />
         <IconButton aria-label="Notifications" sx={{ color: 'var(--ls-text-secondary)' }}><Badge color="success" variant="dot"><VendorIcon name="bell" size={23} /></Badge></IconButton>
       </Toolbar>

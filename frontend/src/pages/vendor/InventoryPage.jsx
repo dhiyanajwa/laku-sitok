@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Alert, Box, Button, IconButton, MenuItem, Paper, Select, Stack, TextField, Typography } from '@mui/material'
-import { adjustIngredient, createIngredient, getIngredientAvailability, getIngredients, getInventory, getProducts, getRecipe, updateIngredient, updateInventory, updateRecipe } from '../../services/api'
+import { adjustIngredient, createIngredient, getIngredientAvailability, getIngredients, getInventory, getVendorProducts, getRecipe, updateIngredient, updateInventory, updateRecipe } from '../../services/api'
 import MenuItemsPage from './MenuItemsPage'
 import VendorIcon from '../../components/VendorIcon'
 
@@ -67,7 +67,7 @@ function InventoryPage() {
   async function load() {
     setError('')
     try {
-      const [inventoryResponse, ingredientsResponse, availabilityResponse, productsResponse] = await Promise.all([getInventory(), getIngredients(), getIngredientAvailability(), getProducts()])
+      const [inventoryResponse, ingredientsResponse, availabilityResponse, productsResponse] = await Promise.all([getInventory(), getIngredients(), getIngredientAvailability(), getVendorProducts()])
       const nextInventory = inventoryResponse.data.data
       const nextIngredients = ingredientsResponse.data.data
       const nextProducts = productsResponse.data.data

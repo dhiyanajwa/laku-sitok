@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import CartDrawer from '../components/CartDrawer'
 import { MenuIcon } from '../components/MenuVisuals'
 import ProductCard from '../components/ProductCard'
-import { createOrder, getProducts, getStallAvailability } from '../services/api'
+import { createOrder, getPublicProducts, getStallAvailability } from '../services/api'
 
 
 function CustomerMenuPage() {
@@ -20,14 +20,14 @@ function CustomerMenuPage() {
   const [copied, setCopied] = useState(false)
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('All')
-  const [sortBy, setSortBy] = useState('popularity')
+  const [sortBy, setSortBy] = useState('recommended')
   const navigate = useNavigate()
   const itemCount = useMemo(() => cartItems.reduce((sum, item) => sum + item.quantity, 0), [cartItems])
   const orderingAvailable = Boolean(stallAvailability?.isOpen)
 
   async function loadProducts() {
     setLoading(true); setError('')
-    try { const { data } = await getProducts(); setProducts(data.data) } catch { setError('We could not load the menu. Please try again.') } finally { setLoading(false) }
+    try { const { data } = await getPublicProducts(); setProducts(data.data) } catch { setError('We could not load the menu. Please try again.') } finally { setLoading(false) }
   }
   async function loadStallAvailability() {
     try { const { data } = await getStallAvailability(); setStallAvailability(data.data) } catch { setError('We could not check whether the stall is open. Please try again.') }
@@ -36,7 +36,8 @@ function CustomerMenuPage() {
 
   function addToCart(product) {
     if (!orderingAvailable) { setError(stallAvailability?.customerMessage || 'Ordering is currently unavailable.'); return }
-    const stock = product.availableQuantity ?? product.inventory?.quantity ?? 99
+    if (!product.canOrder) { setError(`${product.name} is currently sold out.`); return }
+    const stock = 20
     setCartItems((items) => {
       const existing = items.find((item) => item.id === product.id)
       if (existing) return existing.quantity >= stock ? items : items.map((item) => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item)
@@ -59,19 +60,19 @@ function CustomerMenuPage() {
 
   const categories = useMemo(() => ['All', ...new Set(products.map((product) => product.category).filter(Boolean))], [products])
   const visibleProducts = useMemo(() => products
-    .filter((product) => product.is_available && (product.availableQuantity === null || product.availableQuantity === undefined || product.availableQuantity > 0))
+    .filter((product) => product.is_available)
     .filter((product) => category === 'All' || product.category === category)
     .filter((product) => `${product.name} ${product.description || ''} ${product.category}`.toLowerCase().includes(search.trim().toLowerCase()))
     .sort((a, b) => {
       if (sortBy === 'price-low') return Number(a.price) - Number(b.price)
       if (sortBy === 'price-high') return Number(b.price) - Number(a.price)
       if (sortBy === 'name') return a.name.localeCompare(b.name)
-      return Number(b.popularity || 0) - Number(a.popularity || 0) || a.name.localeCompare(b.name)
+      return a.name.localeCompare(b.name)
     }), [products, category, search, sortBy])
 
   const trackingUrl = confirmation?.trackingToken ? `${window.location.origin}/track/${confirmation.trackingToken}` : ''
   async function copyTrackingLink() { try { await navigator.clipboard.writeText(trackingUrl); setCopied(true) } catch { setError('We could not copy the tracking link.') } }
-  function clearFilters() { setSearch(''); setCategory('All'); setSortBy('popularity') }
+  function clearFilters() { setSearch(''); setCategory('All'); setSortBy('recommended') }
 
   return <Box sx={{ minHeight: '100vh', bgcolor: '#f7fafc', color: '#10244a' }}>
     <AppBar position="sticky" color="inherit" elevation={0} sx={{ bgcolor: 'rgba(255,255,255,.96)', borderBottom: '1px solid #ebeff3', backdropFilter: 'blur(8px)' }}>
@@ -100,7 +101,7 @@ function CustomerMenuPage() {
       <Paper elevation={0} sx={{ mt: { xs: 2.25, sm: 4.5 }, p: { xs: 2, sm: 2.5 }, border: '1px solid #e5edf3', borderRadius: 2.5 }}>
         <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'end' }} spacing={2}>
           <Box><Stack direction="row" alignItems="center" spacing={.9} sx={{ color: '#8497b4' }}><MenuIcon name="filter" size={18} /><Typography variant="caption" sx={{ fontWeight: 900, letterSpacing: .2 }}>CATEGORIES</Typography></Stack><Stack direction="row" flexWrap="wrap" gap={1.1} sx={{ mt: 1.2 }}>{categories.map((item) => <Chip key={item} label={item} onClick={() => setCategory(item)} sx={{ height: 42, px: .7, borderRadius: 3, border: '1px solid', borderColor: category === item ? '#006e52' : '#dbe5ef', bgcolor: category === item ? '#006e52' : '#f8fafc', color: category === item ? '#fff' : '#385270', fontWeight: 800, '&:hover': { bgcolor: category === item ? '#005b44' : '#eef4f8' } }} />)}</Stack></Box>
-          <Box sx={{ width: { xs: '100%', sm: 207 } }}><Typography variant="caption" sx={{ display: 'block', mb: .7, textAlign: { sm: 'right' }, color: '#8497b4', fontWeight: 900 }}>SORT BY</Typography><Select fullWidth size="small" value={sortBy} onChange={(event) => setSortBy(event.target.value)} sx={{ height: 42, bgcolor: '#f8fafc', borderRadius: 1.5, color: '#385270', fontWeight: 700, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#dbe5ef' } }}><MenuItem value="popularity">🔥 Popularity</MenuItem><MenuItem value="price-low">Price: low to high</MenuItem><MenuItem value="price-high">Price: high to low</MenuItem><MenuItem value="name">Name: A to Z</MenuItem></Select></Box>
+          <Box sx={{ width: { xs: '100%', sm: 207 } }}><Typography variant="caption" sx={{ display: 'block', mb: .7, textAlign: { sm: 'right' }, color: '#8497b4', fontWeight: 900 }}>SORT BY</Typography><Select fullWidth size="small" value={sortBy} onChange={(event) => setSortBy(event.target.value)} sx={{ height: 42, bgcolor: '#f8fafc', borderRadius: 1.5, color: '#385270', fontWeight: 700, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#dbe5ef' } }}><MenuItem value="recommended">Recommended</MenuItem><MenuItem value="price-low">Price: low to high</MenuItem><MenuItem value="price-high">Price: high to low</MenuItem><MenuItem value="name">Name: A to Z</MenuItem></Select></Box>
         </Stack>
       </Paper>
 

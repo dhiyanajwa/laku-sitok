@@ -70,6 +70,34 @@ export async function listProducts(vendorId) {
   return (productsResult.data || []).map((product) => ({ ...product, ...byProductId.get(product.id), popularity: popularityByProductId.get(product.id) || 0 }))
 }
 
+export async function listPublicProducts(vendorId) {
+  const [productsResult, availability] = await Promise.all([
+    supabase
+      .from('products')
+      .select('id, name, description, category, price, is_available')
+      .eq('vendor_id', vendorId)
+      .order('category')
+      .order('name'),
+    listProductAvailability(vendorId),
+  ])
+
+  if (productsResult.error) throw productsResult.error
+
+  const availabilityByProductId = new Map(availability.map((item) => [item.productId, item]))
+  return (productsResult.data || []).map((product) => {
+    const stock = availabilityByProductId.get(product.id)
+    return {
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      category: product.category,
+      price: Number(product.price),
+      is_available: Boolean(product.is_available),
+      canOrder: Boolean(product.is_available && stock?.recipeComplete !== false && Number(stock?.availableQuantity || 0) > 0),
+    }
+  })
+}
+
 export async function createProduct(vendorId, input) {
   const { data, error } = await supabase.rpc('create_product_with_setup', {
     p_vendor_id: vendorId,
