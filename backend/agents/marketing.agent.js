@@ -1,8 +1,15 @@
-import { getAnalyticsOverview } from '../services/analytics.service.js'
 import { createAdvisorCompletion } from '../services/qwen.service.js'
-import { createMarketingCampaign, getEligibleMarketingProduct, getMarketingSettings } from '../services/marketing.service.js'
+import { OPENING_CAMPAIGN_TYPES, createMarketingCampaign, getEligibleMarketingProduct, getMarketingSettings, getMissingMarketingProfileFields } from '../services/marketing.service.js'
 import { appError } from '../utils/app-error.js'
 import { recordAgentActivity } from './activity.agent.js'
+import { getStallAvailability } from '../services/stall-availability.service.js'
+
+const CAMPAIGN_LABELS = {
+  stall_opening: 'We are open now',
+  opening_later: 'Opening later today',
+  today_special: "Today's special",
+  closing_soon: 'Closing soon',
+}
 
 function parseDraft(answer) {
   const candidate = answer.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/, '').trim()
@@ -13,33 +20,78 @@ function parseDraft(answer) {
       title: String(draft.title).trim().slice(0, 120),
       caption: String(draft.caption).trim().slice(0, 1000),
       callToAction: String(draft.callToAction || '').trim().slice(0, 180),
-      hashtags: Array.isArray(draft.hashtags) ? draft.hashtags.map((tag) => String(tag).trim().replace(/^#/, '')).filter(Boolean).slice(0, 8) : [],
+      hashtags: Array.isArray(draft.hashtags) ? draft.hashtags.map((tag) => String(tag).trim().replace(/^#/, '')).filter(Boolean).slice(0, 10) : [],
       reason: String(draft.reason || '').trim().slice(0, 280),
     }
   } catch {
-    throw appError('The Marketing Agent returned an invalid draft. Please generate it again.', 503)
+    throw appError('The Marketing Agent returned an invalid opening post. Please generate it again.', 503)
   }
 }
 
+function optionalDailyNote(value) {
+  if (value === undefined || value === null) return ''
+  if (typeof value !== 'string') throw appError('Daily note must be text.')
+  return value.trim().slice(0, 240)
+}
+
+function quoted(value) {
+  return value ? `"${value}"` : 'not supplied'
+}
+
 export async function generateMarketingCampaign(vendorId, vendorName, input) {
-  const product = await getEligibleMarketingProduct(vendorId, input.productId)
+  const campaignType = input.campaignType?.trim()
+  if (!OPENING_CAMPAIGN_TYPES.has(campaignType)) throw appError('Choose a valid opening announcement type.')
+
   const settings = await getMarketingSettings(vendorId)
-  const analytics = await getAnalyticsOverview(vendorId)
-  const tone = input.tone?.trim().slice(0, 80) || settings.brandTone
-  const language = input.language?.trim().slice(0, 40) || settings.language
-  const bestSeller = analytics.bestSeller?.name || 'No completed-sales result is available yet'
+  const missing = getMissingMarketingProfileFields(settings)
+  if (missing.length) throw appError(`Complete your Stall marketing profile first: add ${missing.join(' and ')}.`, 422)
 
-  recordAgentActivity(vendorId, { agent: 'Manager Agent', title: 'Marketing workflow started', detail: 'The manager requested a verified promotion draft.' })
-  recordAgentActivity(vendorId, { agent: 'Inventory Agent', title: 'Promotion stock verified', detail: `${product.name} has ${product.quantity} units, above its reorder level of ${product.reorderLevel}.` })
-  recordAgentActivity(vendorId, { agent: 'Business Intelligence Agent', title: 'Marketing context prepared', detail: `Best seller context: ${bestSeller}.` })
+  if (campaignType === 'stall_opening') {
+    const availability = await getStallAvailability(vendorId)
+    if (!availability.isOpen) throw appError('Your stall is currently closed. Open it from the dashboard first, or choose Opening later.', 409)
+  }
 
-  const systemPrompt = `You write concise, honest social-media promotion drafts for Malaysian food vendors. Use only supplied facts. Never invent discounts, ingredients, availability, sales, locations, operating hours, or urgency. Return valid JSON only with title, caption, callToAction, hashtags (array), and reason. Do not include customer information.`
-  const userPrompt = `Vendor: ${vendorName || 'Laku Sitok vendor'}\nTone: ${tone}\nLanguage: ${language}\nProduct: ${product.name}\nCurrent price: RM ${product.price.toFixed(2)}\nStock is verified as sufficient.\nLocation: ${settings.location || 'not supplied'}\nOperating hours: ${settings.operatingHours || 'not supplied'}\nOptional completed-sales context: best seller is ${bestSeller}.\nHashtags enabled: ${settings.hashtagsEnabled ? 'yes' : 'no'}.\nCreate one owner-reviewable promotion. Avoid claims about popularity unless the supplied best-seller field exactly supports it.`
+  const dailyNote = optionalDailyNote(input.dailyNote)
+  const highlightProduct = input.highlightProductId ? await getEligibleMarketingProduct(vendorId, input.highlightProductId) : null
+  const tone = settings.brandTone
+  const language = settings.language
+  const defaultHashtags = settings.hashtagsEnabled ? settings.defaultHashtags : []
 
-  const completion = await createAdvisorCompletion({ systemPrompt, userPrompt })
+  recordAgentActivity(vendorId, { agent: 'Manager Agent', title: 'Opening-post workflow started', detail: `${CAMPAIGN_LABELS[campaignType]} was requested.` })
+  if (highlightProduct) recordAgentActivity(vendorId, { agent: 'Inventory Agent', title: 'Optional highlight verified', detail: `${highlightProduct.name} is available to mention.` })
+
+  const systemPrompt = 'You write concise, honest opening announcements for Malaysian food-stall vendors. Use only the supplied facts. Never invent prices, offers, ingredients, availability, operating hours, locations, links, delivery services, quality claims, or urgency. If a fact is not supplied, omit it. Return valid JSON only with title, caption, callToAction, hashtags (array), and reason. Do not include customer information.'
+  const userPrompt = `Vendor name: ${quoted(vendorName || 'Laku Sitok vendor')}
+Campaign intent: ${CAMPAIGN_LABELS[campaignType]}
+Tone: ${quoted(tone)}
+Language: ${quoted(language)}
+Stall tagline: ${quoted(settings.stallTagline)}
+Location: ${quoted(settings.location)}
+Operating hours: ${quoted(settings.operatingHours)}
+Google Maps link: ${quoted(settings.googleMapsUrl)}
+WhatsApp order link: ${quoted(settings.whatsappOrderUrl)}
+Delivery link: ${quoted(settings.deliveryUrl)}
+Review link: ${quoted(settings.reviewUrl)}
+Vendor-supplied selling points: ${settings.sellingPoints.length ? settings.sellingPoints.join(' | ') : 'not supplied'}
+Vendor-supplied default hashtags: ${defaultHashtags.length ? defaultHashtags.map((tag) => `#${tag}`).join(' ') : 'not supplied'}
+Vendor daily note: ${quoted(dailyNote)}
+Optional highlighted menu item: ${highlightProduct ? `${highlightProduct.name}, RM ${highlightProduct.price.toFixed(2)}` : 'not supplied'}
+
+Create a complete owner-reviewable opening post. Use line breaks so it is easy to read in a WhatsApp Status. Mention the optional menu item only if it is supplied. Do not add any section for a missing link.`
+
+  const completion = await createAdvisorCompletion({ systemPrompt, userPrompt, temperature: 0.4, maxTokens: 700 })
   const parsed = parseDraft(completion.answer)
   if (!settings.hashtagsEnabled) parsed.hashtags = []
-  const campaign = await createMarketingCampaign(vendorId, { productId: product.id, ...parsed, tone, language })
-  recordAgentActivity(vendorId, { agent: 'Marketing Agent', title: 'Promotion draft generated', detail: `A grounded draft for ${product.name} is ready for vendor review.` })
+  else parsed.hashtags = [...new Set([...defaultHashtags, ...parsed.hashtags])].slice(0, 10)
+
+  const campaign = await createMarketingCampaign(vendorId, {
+    campaignType,
+    dailyNote,
+    highlightProductId: highlightProduct?.id,
+    ...parsed,
+    tone,
+    language,
+  })
+  recordAgentActivity(vendorId, { agent: 'Marketing Agent', title: 'Opening post generated', detail: 'A grounded opening announcement is ready for vendor review.' })
   return { campaign, model: completion.model }
 }

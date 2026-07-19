@@ -1,4 +1,4 @@
-import supabase from '../config/supabase.js'
+﻿import supabase from '../config/supabase.js'
 import { appError } from '../utils/app-error.js'
 import { listProductAvailability } from './availability.service.js'
 
@@ -45,17 +45,29 @@ function updateProductPayload(input) {
 }
 
 export async function listProducts(vendorId) {
-  const { data, error } = await supabase
-    .from('products')
-    .select('id, name, description, category, price, cost_price, is_available, stock_mode, inventory(quantity, reorder_level, updated_at)')
-    .eq('vendor_id', vendorId)
-    .order('category')
-    .order('name')
+  const [productsResult, availability, salesResult] = await Promise.all([
+    supabase
+      .from('products')
+      .select('id, name, description, category, price, cost_price, is_available, stock_mode, inventory(quantity, reorder_level, updated_at)')
+      .eq('vendor_id', vendorId)
+      .order('category')
+      .order('name'),
+    listProductAvailability(vendorId),
+    supabase
+      .from('order_items')
+      .select('product_id, quantity, orders!inner(vendor_id, status)')
+      .eq('orders.vendor_id', vendorId)
+      .eq('orders.status', 'completed'),
+  ])
 
-  if (error) throw error
-  const availability = await listProductAvailability(vendorId)
+  if (productsResult.error) throw productsResult.error
+  if (salesResult.error) throw salesResult.error
   const byProductId = new Map(availability.map((item) => [item.productId, item]))
-  return (data || []).map((product) => ({ ...product, ...byProductId.get(product.id) }))
+  const popularityByProductId = new Map()
+  for (const item of salesResult.data || []) {
+    popularityByProductId.set(item.product_id, (popularityByProductId.get(item.product_id) || 0) + Number(item.quantity || 0))
+  }
+  return (productsResult.data || []).map((product) => ({ ...product, ...byProductId.get(product.id), popularity: popularityByProductId.get(product.id) || 0 }))
 }
 
 export async function createProduct(vendorId, input) {

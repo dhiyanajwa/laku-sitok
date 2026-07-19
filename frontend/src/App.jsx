@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import VendorLayout from './components/VendorLayout'
 import { AuthProvider } from './context/AuthContext'
+import { VendorThemeProvider } from './context/ThemeModeContext'
 import CustomerMenuPage from './pages/CustomerMenuPage'
 import OrderTrackingPage from './pages/OrderTrackingPage'
 import AdvisorPage from './pages/vendor/AdvisorPage'
@@ -19,8 +20,8 @@ function App() {
     <Route path="/" element={<WelcomePage />} />
     <Route path="/menu" element={<CustomerMenuPage />} />
     <Route path="/track/:trackingToken" element={<OrderTrackingPage />} />
-    <Route path="/vendor/login" element={<LoginPage />} />
-    <Route element={<ProtectedRoute />}><Route path="/vendor" element={<VendorLayout />}>
+    <Route path="/vendor/login" element={<VendorThemeProvider><LoginPage /></VendorThemeProvider>} />
+    <Route element={<VendorThemeProvider><ProtectedRoute /></VendorThemeProvider>}><Route path="/vendor" element={<VendorLayout />}>
       <Route index element={<VendorDashboardPage />} />
       <Route path="orders" element={<VendorOrdersPage />} />
       <Route path="kitchen" element={<KitchenPage />} />

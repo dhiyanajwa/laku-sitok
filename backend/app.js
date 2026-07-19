@@ -9,6 +9,7 @@ import marketingRoutes from './routes/marketing.routes.js'
 import managerRoutes from './routes/manager.routes.js'
 import orderRoutes from './routes/order.routes.js'
 import productRoutes from './routes/product.routes.js'
+import stallAvailabilityRoutes from './routes/stall-availability.routes.js'
 // Facebook Open Graph share route is deferred until Facebook sharing is resumed.
 // import publicShareRoutes from './routes/public-share.routes.js'
 
@@ -38,6 +39,7 @@ app.use('/api/orders', orderRoutes)
 app.use('/api/inventory', inventoryRoutes)
 app.use('/api/marketing', marketingRoutes)
 app.use('/api/manager', managerRoutes)
+app.use('/api/stall-availability', stallAvailabilityRoutes)
 
 app.get('/api/health', (_request, response) => {
   response.status(200).json({

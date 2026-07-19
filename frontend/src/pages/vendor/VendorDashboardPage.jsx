@@ -1,64 +1,52 @@
-import { useCallback, useEffect, useState } from 'react'
-import { Alert, Box, Button, Card, CardContent, Grid, Stack, Typography } from '@mui/material'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Alert, Box, Button, Grid, Paper, Stack, Typography } from '@mui/material'
 import AgentActivityPanel from '../../components/AgentActivityPanel'
 import ManagerDrawer from '../../components/ManagerDrawer'
-import { getAgentActivity, getAnalyticsOverview } from '../../services/api'
+import VendorIcon from '../../components/VendorIcon'
+import StallAvailabilityCard from '../../components/StallAvailabilityCard'
+import { getAgentActivity, getAnalyticsOverview, getVendorStallAvailability } from '../../services/api'
 
-const formatCurrency = (amount) => new Intl.NumberFormat('en-MY', { style: 'currency', currency: 'MYR' }).format(amount)
+const formatCurrency = (amount) => new Intl.NumberFormat('en-MY', { style: 'currency', currency: 'MYR' }).format(Number(amount || 0))
+
+function MetricCard({ title, value, note, footer }) {
+  return <Paper elevation={0} sx={{ minHeight: 190, p: 3, display: 'flex', flexDirection: 'column', border: '1px solid #e3ebf2', borderRadius: 2.25, boxShadow: '0 2px 5px rgba(30,55,80,.03)' }}>
+    <Stack direction="row" justifyContent="space-between" spacing={1.5} alignItems="start"><Typography sx={{ maxWidth: 130, color: 'var(--ls-text-muted)', fontSize: 14, lineHeight: 1.4, textTransform: 'uppercase', letterSpacing: .45, fontWeight: 900 }}>{title}</Typography><Box sx={{ maxWidth: 180, px: 1.2, py: .55, borderRadius: 3, bgcolor: 'var(--ls-surface-muted)', color: 'var(--ls-text-secondary)', fontSize: 12, lineHeight: 1.35 }}>{note}</Box></Stack>
+    <Typography sx={{ mt: 2.2, color: 'var(--ls-text)', fontSize: { xs: 26, sm: 30 }, lineHeight: 1.05, fontWeight: 900 }}>{value}</Typography>
+    <Box sx={{ mt: 'auto', pt: 2, borderTop: '1px solid #eef2f6', color: 'var(--ls-primary)', display: 'flex', gap: .75, alignItems: 'center', fontSize: 13, fontWeight: 800 }}><Box sx={{ width: 21, height: 21, display: 'grid', placeItems: 'center', borderRadius: .65, bgcolor: '#eafff5' }}>↗</Box>{footer}</Box>
+  </Paper>
+}
+
+function SalesChart({ dailySales }) {
+  const [selectedDate, setSelectedDate] = useState(dailySales.at(-1)?.date || '')
+  const maximum = Math.max(...dailySales.map((day) => Number(day.revenue)), 1)
+  const selectedDay = dailySales.find((day) => day.date === selectedDate) || dailySales.at(-1)
+  return <Paper elevation={0} sx={{ p: { xs: 2.25, sm: 3.5 }, border: '1px solid #e3ebf2', borderRadius: 2.25 }}>
+    <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'start' }} spacing={2}><Box><Typography sx={{ color: 'var(--ls-text)', fontSize: 21, fontWeight: 900 }}>Revenue: last 7 days</Typography><Typography variant="body2" sx={{ mt: .4, color: 'var(--ls-text-muted)' }}>Select a bar to inspect completed sales for that day.</Typography></Box><Box sx={{ px: 1.2, py: .65, border: '1px solid #dce6ee', borderRadius: 1.2, color: 'var(--ls-text-secondary)', fontSize: 13 }}><Box component="span" sx={{ display: 'inline-block', width: 12, height: 12, mr: .7, borderRadius: '50%', bgcolor: 'var(--ls-primary)', verticalAlign: '-1px' }} />Completed Sales (RM)</Box></Stack>
+    <Box sx={{ position: 'relative', mt: 3.5, height: 250, display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', alignItems: 'end', gap: { xs: 1, sm: 2 }, borderBottom: '1px solid #e8eef4', backgroundImage: 'linear-gradient(to top, #e8eef4 1px, transparent 1px)', backgroundSize: '100% 33.333%' }}>{dailySales.map((day) => { const active = day.date === selectedDay?.date; const height = Math.max(Number(day.revenue) / maximum * 206, 7); return <Box key={day.date} sx={{ height: '100%', minWidth: 0, display: 'grid', gridTemplateRows: '1fr auto', alignItems: 'end', textAlign: 'center' }}><Button aria-label={`View sales for ${day.date}`} onClick={() => setSelectedDate(day.date)} sx={{ height: '100%', minWidth: 0, px: { xs: .2, sm: .8 }, alignItems: 'end', '&:hover': { bgcolor: 'transparent' } }}><Box sx={{ width: '100%', maxWidth: 56, height, mx: 'auto', borderRadius: '9px 9px 0 0', bgcolor: active ? '#19b897' : day.revenue > 0 ? 'var(--ls-primary)' : 'var(--ls-border-subtle)', border: active ? '3px solid #00a87a' : 'none', borderBottom: 0, transition: 'height .25s ease' }} /></Button><Typography variant="caption" sx={{ mt: 1.1, color: active ? 'var(--ls-primary)' : 'var(--ls-text-muted)', fontWeight: 900 }}>{day.date.slice(5)}</Typography></Box>})}<Box sx={{ position: 'absolute', right: 0, top: 10, px: 1.4, py: .9, borderRadius: 1.2, bgcolor: 'var(--ls-inverse-surface)', color: '#fff', boxShadow: '0 7px 16px rgba(10,27,50,.16)' }}><Typography sx={{ color: '#40d6b3', fontSize: 13, fontWeight: 900 }}>{formatCurrency(selectedDay?.revenue)}</Typography><Typography sx={{ mt: .15, fontSize: 11 }}>Completed sales on {selectedDay?.date}</Typography></Box></Box>
+  </Paper>
+}
+
+function StockAvailability({ analytics, onAskManager }) {
+  const availability = analytics.canStillMake.filter((item) => item.recipeComplete)
+  const recipeGaps = analytics.canStillMake.filter((item) => !item.recipeComplete)
+  const colorsFor = (count) => count <= 5 ? { bg: 'var(--ls-stock-critical-bg)', border: 'var(--ls-stock-critical-border)', text: 'var(--ls-stock-critical-text)' } : count <= 15 ? { bg: 'var(--ls-stock-watch-bg)', border: 'var(--ls-stock-watch-border)', text: 'var(--ls-stock-watch-text)' } : { bg: 'var(--ls-stock-healthy-bg)', border: 'var(--ls-stock-healthy-border)', text: 'var(--ls-stock-healthy-text)' }
+  return <Paper elevation={0} sx={{ overflow: 'hidden', border: '1px solid #e3ebf2', borderRadius: 2.25 }}><Box sx={{ p: { xs: 2.25, sm: 3.5 } }}><Stack direction="row" justifyContent="space-between" alignItems="start"><Box><Typography sx={{ color: 'var(--ls-text)', fontSize: 21, fontWeight: 900 }}>Stock Availability Limits</Typography><Typography variant="body2" sx={{ mt: .4, color: 'var(--ls-text-muted)' }}>Critical ingredients affecting active recipe menu items</Typography></Box><Box sx={{ color: '#f6ae26', fontSize: 24 }}>⚠</Box></Stack><Stack spacing={1.5} sx={{ mt: 2.5 }}>{availability.length ? availability.map((item) => { const colors = colorsFor(item.estimatedAvailable); return <Box key={item.productId} sx={{ display: 'grid', gridTemplateColumns: { xs: '48px 1fr', sm: '48px 1fr auto' }, gap: 1.5, alignItems: 'center', p: 1.8, border: '1px solid', borderColor: colors.border, borderRadius: 1.5, bgcolor: colors.bg }}><Box sx={{ width: 38, height: 38, display: 'grid', placeItems: 'center', borderRadius: 1, bgcolor: 'var(--ls-surface)', color: colors.text, fontWeight: 900 }}>{item.estimatedAvailable}</Box><Box><Typography sx={{ color: 'var(--ls-text)', fontWeight: 900 }}>Can still make: {item.productName}</Typography><Typography variant="body2" sx={{ mt: .2, color: 'var(--ls-text-secondary)' }}>Limited by: {item.limitingIngredients.map((ingredient) => ingredient.name).join(', ') || 'current ingredient availability'}</Typography></Box><Button onClick={onAskManager} size="small" variant="outlined" sx={{ gridColumn: { xs: 2, sm: 'auto' }, justifySelf: { xs: 'start', sm: 'auto' }, borderColor: 'var(--ls-border)', color: 'var(--ls-text-secondary)', textTransform: 'none', fontWeight: 800 }}>Ask Manager</Button></Box> }) : <Typography variant="body2" sx={{ color: 'var(--ls-text-muted)' }}>No completed recipe availability calculations are available yet.</Typography>}{recipeGaps.map((item) => <Alert key={item.productId} severity="warning">{item.productName} needs a complete recipe before availability can be estimated.</Alert>)}</Stack></Box>{analytics.ingredientLowStock.length > 0 && <Box sx={{ p: { xs: 2.25, sm: 3.5 }, borderTop: '1px solid var(--ls-border-subtle)', bgcolor: 'var(--ls-purple-soft)' }}><Stack direction="row" spacing={1.4} alignItems="start"><Box sx={{ color: 'var(--ls-purple)', display: 'grid' }}><VendorIcon name="advisor" size={25} /></Box><Box><Typography sx={{ color: 'var(--ls-purple)', fontWeight: 900 }}>Restocking insight</Typography><Typography variant="body2" sx={{ mt: .35, color: 'var(--ls-text-secondary)' }}>Low ingredients: {analytics.ingredientLowStock.map((item) => `${item.name} (${item.quantity} ${item.unit})`).join(', ')}.</Typography><Button onClick={onAskManager} sx={{ mt: .6, px: 0, color: 'var(--ls-purple)', textTransform: 'none', fontWeight: 900 }}>Ask AI Manager about restocking ›</Button></Box></Stack></Box>}</Paper>
+}
 
 function VendorDashboardPage() {
   const [analytics, setAnalytics] = useState(null)
   const [events, setEvents] = useState([])
+  const [stallAvailability, setStallAvailability] = useState(null)
   const [error, setError] = useState('')
   const [refreshingEvents, setRefreshingEvents] = useState(false)
   const [managerOpen, setManagerOpen] = useState(false)
-
-  const loadActivity = useCallback(async () => {
-    setRefreshingEvents(true)
-    try {
-      const response = await getAgentActivity()
-      setEvents(response.data.data)
-    } catch {
-      setError('We could not load recent agent activity.')
-    } finally {
-      setRefreshingEvents(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    getAnalyticsOverview().then((response) => setAnalytics(response.data.data)).catch(() => setError('We could not load the vendor dashboard.'))
-    loadActivity()
-  }, [loadActivity])
-
-  const cards = analytics ? [
-    ['Today\'s revenue', formatCurrency(analytics.today.revenue)],
-    ['Completed today', analytics.today.orderCount],
-    ['Overall profit', formatCurrency(analytics.overall.profit)],
-    ['Best seller', analytics.bestSeller ? `${analytics.bestSeller.name} (${analytics.bestSeller.quantity})` : 'No completed sales'],
-  ] : []
-
-  return <Stack spacing={3}>
-    <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={2} alignItems={{ sm: 'center' }}><BoxTitle title="Good day, Warung Murni" subtitle="Here is a live overview of your completed sales." /><Button variant="contained" color="secondary" onClick={() => setManagerOpen(true)}>Ask Manager</Button></Stack>
-    {error && <Alert severity="error" onClose={() => setError('')}>{error}</Alert>}
-    <Grid container spacing={2}>
-      {cards.map(([label, value]) => <Grid key={label} size={{ xs: 6, lg: 3 }}><Card><CardContent><Typography color="text.secondary">{label}</Typography><Typography variant="h5" fontWeight={900}>{value}</Typography></CardContent></Card></Grid>)}
-    </Grid>
-    {analytics && <SalesChart dailySales={analytics.dailySales} />}
-    {analytics?.lowStock.length > 0 && <Alert severity="warning">Low stock: {analytics.lowStock.map((item) => `${item.name} (${item.quantity} left)`).join(', ')}.</Alert>}
-    {analytics?.canStillMake?.map((item) => item.recipeComplete ? <Alert key={item.productId} severity={item.estimatedAvailable === 0 ? 'error' : 'info'}>Can still make: {item.estimatedAvailable} serving(s){item.limitingIngredients.length ? ` — limited by ${item.limitingIngredients.map((ingredient) => ingredient.name).join(', ')}.` : '.'}</Alert> : <Alert key={item.productId} severity="warning">A recipe product needs a complete recipe before Laku Sitok can estimate availability.</Alert>)}
-    {analytics?.ingredientLowStock?.length > 0 && <Alert severity="warning">Low ingredients: {analytics.ingredientLowStock.map((item) => `${item.name} (${item.quantity} ${item.unit} left)`).join(', ')}.</Alert>}
-    <AgentActivityPanel events={events} onRefresh={loadActivity} refreshing={refreshingEvents} />
-    <ManagerDrawer open={managerOpen} onClose={() => setManagerOpen(false)} />
-  </Stack>
-}
-
-function SalesChart({ dailySales }) {
-  const maximum = Math.max(...dailySales.map((day) => day.revenue), 1)
-  return <Card><CardContent><Typography fontWeight={800} mb={2}>Revenue: last 7 days</Typography><Stack direction="row" spacing={1.5} alignItems="end" sx={{ height: 180 }}>{dailySales.map((day) => <Stack key={day.date} spacing={0.5} alignItems="center" sx={{ flex: 1, height: '100%', justifyContent: 'end' }}><Typography variant="caption">{formatCurrency(day.revenue)}</Typography><Box sx={{ width: '100%', maxWidth: 48, minHeight: 4, height: `${Math.max((day.revenue / maximum) * 120, 4)}px`, bgcolor: 'primary.main', borderRadius: 1 }} /><Typography variant="caption" color="text.secondary">{day.date.slice(5)}</Typography></Stack>)}</Stack></CardContent></Card>
-}
-
-function BoxTitle({ title, subtitle }) {
-  return <Stack spacing={0.5}><Typography variant="h4" fontWeight={900}>{title}</Typography><Typography color="text.secondary">{subtitle}</Typography></Stack>
+  const loadActivity = useCallback(async () => { setRefreshingEvents(true); try { const response = await getAgentActivity(); setEvents(response.data.data) } catch { setError('We could not load recent agent activity.') } finally { setRefreshingEvents(false) } }, [])
+  const loadDashboard = useCallback(async () => { try { const response = await getAnalyticsOverview(); setAnalytics(response.data.data) } catch { setError('We could not load the vendor dashboard.') } }, [])
+  const loadStallAvailability = useCallback(async () => { try { const response = await getVendorStallAvailability(); setStallAvailability(response.data.data) } catch (requestError) { setError(requestError.response?.data?.message || 'We could not load your stall availability. Run the stall availability database migration first.') } }, [])
+  useEffect(() => { loadDashboard(); loadActivity(); loadStallAvailability() }, [loadActivity, loadDashboard, loadStallAvailability])
+  const margin = useMemo(() => analytics?.overall.revenue ? Math.round(analytics.overall.profit / analytics.overall.revenue * 100) : 0, [analytics])
+  const cards = analytics ? [{ title: "Today's revenue", value: formatCurrency(analytics.today.revenue), note: 'Live completed earnings today', footer: 'Live completed-sales metric' }, { title: 'Completed today', value: `${analytics.today.orderCount} order${analytics.today.orderCount === 1 ? '' : 's'}`, note: 'Processed food & drink tickets', footer: 'Completed-order data only' }, { title: 'Overall profit', value: formatCurrency(analytics.overall.profit), note: analytics.overall.revenue ? `Net profit margin: ${margin}%` : 'No completed sales yet', footer: 'Completed-sales profit only' }, { title: 'Best seller', value: analytics.bestSeller ? `${analytics.bestSeller.name} (${analytics.bestSeller.quantity})` : 'No completed sales', note: 'Highest completed-sales volume', footer: 'Based on completed sales' }] : []
+  return <Stack spacing={{ xs: 2.25, sm: 3.25 }} sx={{ maxWidth: 1160, mx: 'auto' }}>{error && <Alert severity="error" onClose={() => setError('')}>{error}</Alert>}<Paper elevation={0} sx={{ overflow: 'hidden', p: { xs: 2.5, sm: 3.75 }, borderRadius: 2.5, color: '#fff', background: 'linear-gradient(112deg, #075f55, #101a31 72%)' }}><Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} spacing={2.5}><Box><Typography variant="overline" sx={{ color: '#3ee4bd', letterSpacing: 1.2, fontWeight: 900 }}>STORE DASHBOARD</Typography><Typography component="h1" sx={{ mt: .3, maxWidth: 550, fontSize: { xs: 32, sm: 40 }, lineHeight: 1.1, fontWeight: 900 }}>Good day, Warung Murni! 👋</Typography><Typography sx={{ mt: 1, maxWidth: 560, color: '#d7efe9', fontWeight: 600 }}>Here is your live vendor performance, completed sales, and real-time smart advisor metrics.</Typography></Box><Button variant="contained" onClick={() => setManagerOpen(true)} startIcon={<VendorIcon name="spark" size={22} />} sx={{ alignSelf: { sm: 'center' }, minWidth: 0, minHeight: 48, height: 48, px: 2.1, borderRadius: 1.5, bgcolor: 'var(--ls-purple)', color: '#fff', boxShadow: '0 8px 18px rgba(72,24,182,.22)', textTransform: 'none', fontSize: 14, fontWeight: 900, whiteSpace: 'nowrap', '&:hover': { bgcolor: '#6522d0' } }}>Ask AI Manager</Button></Stack></Paper><StallAvailabilityCard availability={stallAvailability} onChanged={setStallAvailability} /><Grid container spacing={{ xs: 2, sm: 3 }}>{cards.map((card) => <Grid key={card.title} size={{ xs: 12, sm: 6 }}><MetricCard {...card} /></Grid>)}</Grid>{analytics && <SalesChart dailySales={analytics.dailySales} />}{analytics && <StockAvailability analytics={analytics} onAskManager={() => setManagerOpen(true)} />}<AgentActivityPanel events={events} onRefresh={loadActivity} refreshing={refreshingEvents} /><ManagerDrawer open={managerOpen} onClose={() => setManagerOpen(false)} /></Stack>
 }
 
 export default VendorDashboardPage

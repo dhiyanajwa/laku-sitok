@@ -1,21 +1,16 @@
-﻿import { StrictMode } from 'react'
+import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
-import { CssBaseline, ThemeProvider, createTheme } from '@mui/material'
+import { CssBaseline, ThemeProvider } from '@mui/material'
 import './index.css'
 import App from './App.jsx'
+import { lightLakuTheme } from './theme/lakuTheme'
 
-const theme = createTheme({
-  palette: {
-    primary: { main: '#176B4D' },
-    background: { default: '#F7FAF8' },
-  },
-  shape: { borderRadius: 12 },
-})
+
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={lightLakuTheme}>
       <CssBaseline />
       <BrowserRouter>
         <App />

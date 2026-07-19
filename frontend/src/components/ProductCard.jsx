@@ -1,14 +1,34 @@
-import { Button, Card, CardActions, CardContent, Chip, Stack, Typography } from '@mui/material'
+import { Box, Button, Card, Chip, Stack, Typography } from '@mui/material'
+import { MenuIcon, ProductIllustration } from './MenuVisuals'
 
 const formatCurrency = (amount) => new Intl.NumberFormat('en-MY', { style: 'currency', currency: 'MYR' }).format(amount)
 
-function ProductCard({ product, onAdd }) {
+function ProductCard({ product, onAdd, canOrder }) {
   const knownAvailability = product.availableQuantity !== null && product.availableQuantity !== undefined
   const quantity = knownAvailability ? product.availableQuantity : product.inventory?.quantity || 0
   const available = product.is_available && (!knownAvailability || quantity > 0)
   const ingredientRecipe = product.availabilitySource === 'ingredient_recipe'
+  const isPopular = Number(product.popularity || 0) > 0
+  const canAdd = available && canOrder
 
-  return <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}><CardContent sx={{ flex: 1 }}><Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}><Chip label={product.category} size="small" color="primary" variant="outlined" /><Typography fontWeight={800}>{formatCurrency(product.price)}</Typography></Stack><Typography variant="h6" fontWeight={800} sx={{ mt: 2 }}>{product.name}</Typography><Typography color="text.secondary" variant="body2" sx={{ mt: 0.5 }}>{product.description || 'Freshly prepared.'}</Typography><Typography variant="caption" color={available ? 'text.secondary' : 'error'} sx={{ display: 'block', mt: 2 }}>{available ? ingredientRecipe ? `${quantity} can still be made` : `${quantity} available` : 'Sold out'}</Typography></CardContent><CardActions sx={{ p: 2, pt: 0 }}><Button fullWidth variant="contained" onClick={() => onAdd(product)} disabled={!available}>Add to cart</Button></CardActions></Card>
+  return <Card variant="outlined" sx={{ height: '100%', overflow: 'hidden', borderRadius: 2.5, borderColor: '#08a673', boxShadow: '0 2px 4px rgba(28, 52, 68, .025)', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ minHeight: { xs: 190, sm: 205 }, bgcolor: '#f8fafc', position: 'relative', display: 'grid', placeItems: 'center', p: 2 }}>
+      {isPopular && <Box sx={{ position: 'absolute', top: 16, left: 16, height: 28, display: 'flex', alignItems: 'center', gap: .55, px: 1.15, borderRadius: 3, bgcolor: '#ff9000', color: '#fff', fontSize: 12, fontWeight: 900, lineHeight: 1 }}><Box sx={{ display: 'grid', transform: 'translateY(-.5px)' }}><MenuIcon name="trending" size={14} strokeWidth={2.4} /></Box><span>POPULAR</span></Box>}
+      <ProductIllustration product={product} />
+      {isPopular && <Box sx={{ position: 'absolute', right: 16, bottom: 15, display: 'flex', gap: .6, alignItems: 'center', px: 1, py: .5, bgcolor: '#fff', border: '1px solid #edf0f4', borderRadius: 1.5, fontWeight: 800, fontSize: 13, color: '#415672' }}><span style={{ color: '#f5ad26' }}>★</span>{Math.min(4.9, 4.5 + Number(product.popularity || 0) / 20).toFixed(1)}</Box>}
+    </Box>
+    <Stack spacing={1.05} sx={{ p: { xs: 2, sm: 2.25 }, flex: 1 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="start" spacing={1.5}>
+        <Box><Chip label={product.category} size="small" sx={{ height: 24, borderRadius: 1, bgcolor: '#eff4f8', color: '#45607d', fontSize: 11, fontWeight: 800, textTransform: 'uppercase' }} /><Typography variant="h6" sx={{ mt: 1, fontWeight: 900, color: '#10244a', lineHeight: 1.15 }}>{product.name}</Typography></Box>
+        <Typography sx={{ mt: .5, whiteSpace: 'nowrap', color: '#007b5b', fontSize: 20, fontWeight: 900 }}>{formatCurrency(product.price)}</Typography>
+      </Stack>
+      <Typography variant="body2" color="text.secondary" sx={{ minHeight: 40 }}>{product.description || 'Freshly prepared.'}</Typography>
+      <Box sx={{ pt: .4, mt: 'auto', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', alignItems: 'center', columnGap: 1 }}>
+        <Typography variant="caption" color={canAdd ? 'text.secondary' : 'error'}>{!canOrder ? 'Ordering closed' : available ? ingredientRecipe ? `${quantity} can be made` : `${quantity} available` : 'Sold out'}</Typography>
+        <Button size="small" variant="contained" onClick={() => onAdd(product)} disabled={!canAdd} sx={{ justifySelf: 'end', width: 92, minWidth: 92, borderRadius: 1.75, textTransform: 'none', fontWeight: 800 }}>{canOrder ? 'Add' : 'Closed'}</Button>
+      </Box>
+    </Stack>
+  </Card>
 }
 
 export default ProductCard

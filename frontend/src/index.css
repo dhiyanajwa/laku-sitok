@@ -1,7 +1,91 @@
-﻿:root {
+:root {
   font-family: Inter, system-ui, sans-serif;
 }
 
 body {
   margin: 0;
+}
+
+.laku-vendor-theme {
+  --ls-page: #f7fafc;
+  --ls-surface: #ffffff;
+  --ls-surface-muted: #f4f8fb;
+  --ls-surface-raised: #edf3f8;
+  --ls-text: #10244a;
+  --ls-text-secondary: #526b89;
+  --ls-text-muted: #8294b1;
+  --ls-inverse-surface: #10244a;
+  --ls-border: #dce6ef;
+  --ls-border-subtle: #e7edf3;
+  --ls-primary: #008764;
+  --ls-primary-soft: #e2f8f0;
+  --ls-primary-hover: #effbf7;
+  --ls-purple: #7424c8;
+  --ls-purple-soft: #f6efff;
+  --ls-stock-critical-bg: #fff8e8;
+  --ls-stock-critical-border: #f5d36c;
+  --ls-stock-critical-text: #d97706;
+  --ls-stock-watch-bg: #edf8ff;
+  --ls-stock-watch-border: #b5e0ff;
+  --ls-stock-watch-text: #1683c7;
+  --ls-stock-healthy-bg: #effcf6;
+  --ls-stock-healthy-border: #b8efd4;
+  --ls-stock-healthy-text: #008764;
+}
+
+.laku-vendor-theme[data-laku-theme='dark'] {
+  --ls-page: #0b1423;
+  --ls-surface: #122037;
+  --ls-surface-muted: #172940;
+  --ls-surface-raised: #1c304b;
+  --ls-text: #edf5ff;
+  --ls-text-secondary: #b3c7df;
+  --ls-text-muted: #91a9c6;
+  --ls-inverse-surface: #081326;
+  --ls-border: #2a405d;
+  --ls-border-subtle: #213650;
+  --ls-primary: #19b897;
+  --ls-primary-soft: #123e3b;
+  --ls-primary-hover: #174d48;
+  --ls-purple: #c497ff;
+  --ls-purple-soft: #2a1d48;
+  --ls-stock-critical-bg: #3d2b0b;
+  --ls-stock-critical-border: #af730e;
+  --ls-stock-critical-text: #ffca6f;
+  --ls-stock-watch-bg: #0e3149;
+  --ls-stock-watch-border: #287fad;
+  --ls-stock-watch-text: #75c7f2;
+  --ls-stock-healthy-bg: #103a32;
+  --ls-stock-healthy-border: #278269;
+  --ls-stock-healthy-text: #67d5b7;
+}
+/* Existing portal screens use a mix of MUI defaults and legacy one-off colours.
+   These safeguards keep the shared controls cohesive while each screen uses the
+   semantic Laku Sitok tokens above. */
+.laku-vendor-theme[data-laku-theme='dark'] .MuiPaper-root,
+.laku-vendor-theme[data-laku-theme='dark'] .MuiDrawer-paper,
+.laku-vendor-theme[data-laku-theme='dark'] .MuiDialog-paper {
+  background-color: var(--ls-surface) !important;
+  color: var(--ls-text);
+}
+
+.laku-vendor-theme[data-laku-theme='dark'] .MuiInputBase-root,
+.laku-vendor-theme[data-laku-theme='dark'] .MuiSelect-select,
+.laku-vendor-theme[data-laku-theme='dark'] .MuiMenuItem-root,
+.laku-vendor-theme[data-laku-theme='dark'] .MuiTableCell-root {
+  color: var(--ls-text);
+}
+
+.laku-vendor-theme[data-laku-theme='dark'] .MuiInputBase-root {
+  background-color: var(--ls-surface-muted);
+}
+
+.laku-vendor-theme[data-laku-theme='dark'] .MuiOutlinedInput-notchedOutline,
+.laku-vendor-theme[data-laku-theme='dark'] .MuiTableCell-root {
+  border-color: var(--ls-border) !important;
+}
+
+.laku-vendor-theme[data-laku-theme='dark'] .MuiInputBase-input::placeholder {
+  color: var(--ls-text-muted);
+  opacity: 1;
 }

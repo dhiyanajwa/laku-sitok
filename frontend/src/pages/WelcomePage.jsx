@@ -1,52 +1,63 @@
-﻿import { useEffect, useState } from 'react'
-import { Alert, Box, Button, Chip, CircularProgress, Stack, Typography } from '@mui/material'
+import { Box, Button, Chip, Container, Divider, Paper, Stack, Typography } from '@mui/material'
 import { QRCodeSVG } from 'qrcode.react'
 import { Link as RouterLink } from 'react-router-dom'
-import { getHealth } from '../services/api'
+
+const featureCards = [
+  { number: '01', icon: '↗', title: 'Take real orders', text: 'Give customers a fast menu, checkout, and order-tracking flow.', action: 'Try customer menu', to: '/menu', tone: 'emerald' },
+  { number: '02', icon: '◫', title: 'Run the kitchen', text: 'Move every ticket from pending to ready without losing the order context.', action: 'Open vendor portal', to: '/vendor/login', tone: 'navy' },
+  { number: '03', icon: '✦', title: 'Stay one step ahead', text: 'See ingredient limits, practical AI guidance, and opening-post marketing.', action: 'See demo guide', href: '#demo', tone: 'purple' },
+]
+
+const vendorSteps = ['Sign in to the Warung Murni demo portal.', 'Set the stall to Open from the dashboard.', 'Follow the customer order through Kitchen and stock.', 'Ask the AI Manager or create an opening post.']
+const customerSteps = ['Scan the QR code or open the customer menu.', 'Choose a meal and place a real demo order.', 'Open the tracking screen to see its kitchen progress.']
+
+function Brand() {
+  return <Stack direction="row" spacing={1.05} sx={{ alignItems: 'center' }}><Box sx={{ width: 36, height: 36, display: 'grid', placeItems: 'center', borderRadius: 1.15, bgcolor: '#008764', color: '#fff', fontSize: 14, fontWeight: 1000, letterSpacing: -.65 }}>LS</Box><Typography sx={{ color: '#10244a', fontSize: 19, letterSpacing: -.7, fontWeight: 1000 }}>Laku Sitok</Typography></Stack>
+}
+
+function FeatureCard({ card }) {
+  const accents = {
+    emerald: { color: '#007c5d', iconBg: '#d5f7e9' },
+    navy: { color: '#16355d', iconBg: '#dceafa' },
+    purple: { color: '#6f27bd', iconBg: '#ede0ff' },
+  }
+  const accent = accents[card.tone]
+  const action = card.to ? <Button component={RouterLink} to={card.to} sx={{ mt: 'auto', px: 0, minWidth: 0, color: accent.color, textTransform: 'none', fontWeight: 900 }}>{card.action} <Box component="span" sx={{ ml: .6 }}>›</Box></Button> : <Button href={card.href} sx={{ mt: 'auto', px: 0, minWidth: 0, color: accent.color, textTransform: 'none', fontWeight: 900 }}>{card.action} <Box component="span" sx={{ ml: .6 }}>›</Box></Button>
+  return <Paper elevation={0} sx={{ minHeight: 226, p: 2.45, display: 'flex', flexDirection: 'column', border: '1px solid #e4ecf1', borderRadius: 2.3, bgcolor: '#fff', boxShadow: '0 14px 30px rgba(28,54,77,.07)' }}>
+    <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'flex-start' }}><Box sx={{ width: 42, height: 42, display: 'grid', placeItems: 'center', borderRadius: 1.4, bgcolor: accent.iconBg, color: accent.color, fontSize: 21, fontWeight: 900 }}>{card.icon}</Box><Typography sx={{ color: '#91a2b6', fontSize: 11, letterSpacing: .8, fontWeight: 900 }}>{card.number}</Typography></Stack>
+    <Typography sx={{ mt: 2.35, color: '#10244a', fontSize: 18, letterSpacing: -.35, fontWeight: 1000 }}>{card.title}</Typography><Typography sx={{ mt: .75, color: '#667b96', fontSize: 13.5, lineHeight: 1.62 }}>{card.text}</Typography>{action}
+  </Paper>
+}
+
+function StepList({ steps, color }) {
+  return <Stack spacing={1.35}>{steps.map((step, index) => <Stack key={step} direction="row" spacing={1.2} sx={{ alignItems: 'flex-start' }}><Box sx={{ flexShrink: 0, width: 25, height: 25, display: 'grid', placeItems: 'center', borderRadius: '50%', bgcolor: color, color: '#fff', fontSize: 11, fontWeight: 1000 }}>{index + 1}</Box><Typography sx={{ pt: .2, color: '#435d7a', fontSize: 14, lineHeight: 1.45 }}>{step}</Typography></Stack>)}</Stack>
+}
 
 function WelcomePage() {
-  const [health, setHealth] = useState({ loading: true, status: '', message: '' })
+  const menuUrl = `${window.location.origin}/menu`
 
-  async function checkApi() {
-    setHealth({ loading: true, status: '', message: '' })
+  return <Box sx={{ minHeight: '100vh', overflow: 'hidden', bgcolor: '#f5f7f9', color: '#10244a', backgroundImage: 'radial-gradient(circle at 12% 38%, rgba(0,135,100,.07), transparent 21%), radial-gradient(circle at 93% 40%, rgba(118,44,202,.07), transparent 24%)' }}>
+    <Container maxWidth="xl" sx={{ py: { xs: 1.25, md: 4.25 }, px: { xs: 1.25, sm: 2.5 } }}>
+      <Paper elevation={0} sx={{ overflow: 'hidden', border: '1px solid #dce5eb', borderRadius: { xs: 2.25, md: 3.25 }, bgcolor: '#fff', boxShadow: '0 24px 70px rgba(28,48,67,.08)' }}>
+        <Box component="header" sx={{ px: { xs: 2, sm: 3.3 }, py: 1.55, borderBottom: '1px solid #edf1f4' }}>
+          <Stack direction="row" spacing={2} sx={{ alignItems: 'center', justifyContent: 'space-between' }}><Brand /><Stack direction="row" spacing={.4} sx={{ display: { xs: 'none', md: 'flex' } }}><Button href="#how-it-works" sx={{ color: '#506783', textTransform: 'none', fontWeight: 800 }}>How it works</Button><Button href="#demo" sx={{ color: '#506783', textTransform: 'none', fontWeight: 800 }}>Demo guide</Button><Button component={RouterLink} to="/menu" sx={{ color: '#506783', textTransform: 'none', fontWeight: 800 }}>Customer menu</Button></Stack><Button component={RouterLink} to="/vendor/login" variant="contained" sx={{ minHeight: 40, borderRadius: 1.3, bgcolor: '#10244a', px: { xs: 1.45, sm: 2.1 }, boxShadow: 'none', textTransform: 'none', fontWeight: 900, '&:hover': { bgcolor: '#1d3456', boxShadow: 'none' } }}>Vendor login</Button></Stack>
+        </Box>
 
-    try {
-      const { data } = await getHealth()
-      setHealth({ loading: false, status: data.status, message: data.message })
-    } catch {
-      setHealth({
-        loading: false,
-        status: 'error',
-        message: 'The API is not available. Start the backend on port 5000.',
-      })
-    }
-  }
+        <Box sx={{ position: 'relative', px: { xs: 2.25, sm: 4.5, lg: 8 }, pt: { xs: 7, sm: 9.5 }, pb: { xs: 5, md: 12.5 }, textAlign: 'center', background: 'linear-gradient(135deg, #fff 0%, #f6fbfa 54%, #f6f4fb 100%)' }}>
+          <Box sx={{ position: 'absolute', left: { xs: -80, md: -125 }, bottom: { xs: -100, md: -145 }, width: { xs: 205, md: 305 }, height: { xs: 205, md: 305 }, borderRadius: '50%', bgcolor: 'rgba(0,135,100,.09)' }} /><Box sx={{ position: 'absolute', right: { xs: -100, md: -145 }, top: { xs: 100, md: 72 }, width: { xs: 220, md: 355 }, height: { xs: 220, md: 355 }, borderRadius: '50%', bgcolor: 'rgba(117,43,196,.06)' }} />
+          <Stack sx={{ position: 'relative', alignItems: 'center' }}><Chip label="BUILT FOR LOCAL FOOD STALLS" sx={{ height: 30, px: .55, border: '1px solid #bcebd8', bgcolor: '#ecfff6', color: '#008764', fontSize: 10.5, letterSpacing: .85, fontWeight: 1000 }} /><Typography component="h1" sx={{ mt: 2.15, maxWidth: 800, color: '#0d1e39', fontSize: { xs: 38, sm: 55, md: 68 }, letterSpacing: { xs: -1.7, md: -3.4 }, lineHeight: .99, fontWeight: 1000 }}>One stall. <Box component="span" sx={{ display: 'inline-block', mx: '.05em', px: '.13em', pb: '.02em', borderRadius: '.12em', background: 'linear-gradient(transparent 63%, #d2f5e3 63%)', color: '#008764', letterSpacing: 'inherit' }}>Every</Box> daily operation.<Box component="span" sx={{ color: '#008764' }}> In sync.</Box></Typography><Typography sx={{ mt: 2.2, maxWidth: 610, color: '#627892', fontSize: { xs: 15, sm: 17 }, lineHeight: 1.65 }}>Laku Sitok brings customer ordering, kitchen flow, ingredient-aware stock, AI advice, and daily marketing into one practical workspace for small food businesses.</Typography><Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.15} sx={{ mt: 3.1, width: { xs: '100%', sm: 'auto' } }}><Button component={RouterLink} to="/menu" variant="contained" sx={{ minHeight: 50, borderRadius: 1.4, bgcolor: '#008764', px: 2.6, textTransform: 'none', fontSize: 15, fontWeight: 1000, '&:hover': { bgcolor: '#006c51' } }}>Try as customer <Box component="span" sx={{ ml: 1 }}>↗</Box></Button><Button component="a" href="#demo" variant="outlined" sx={{ minHeight: 50, borderColor: '#cfdce6', color: '#15345a', borderRadius: 1.4, px: 2.6, textTransform: 'none', fontSize: 15, fontWeight: 900 }}>View demo guide</Button></Stack></Stack>
+        </Box>
 
-  useEffect(() => {
-    checkApi()
-  }, [])
+        <Box sx={{ position: 'relative', px: { xs: 2, sm: 4.5, lg: 8 }, mt: { xs: 0, md: -6 }, pb: { xs: 7, md: 10 } }}><Box sx={{ position: 'relative', display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 2.1 }}>{featureCards.map((card) => <FeatureCard key={card.number} card={card} />)}</Box></Box>
 
-  return (
-    <Box sx={{ maxWidth: 720, mx: 'auto', px: 3, py: { xs: 8, md: 14 } }}>
-      <Stack spacing={3} alignItems="flex-start">
-        <Chip label="Customer ordering" color="primary" />
-        <Typography component="h1" variant="h2" fontWeight={800}>Laku Sitok</Typography>
-        <Typography variant="h5" color="text.secondary">A simple operating system for micro-businesses.</Typography>
-        <Typography color="text.secondary">Scan the QR code or open the menu to place an order.</Typography>
-        <QRCodeSVG value={`${window.location.origin}/menu`} size={160} includeMargin />
-        <Button component={RouterLink} to="/menu" variant="contained">Open customer menu</Button>
-        {health.loading ? (
-          <Stack direction="row" spacing={1.5} alignItems="center">
-            <CircularProgress size={20} />
-            <Typography>Checking API connection...</Typography>
-          </Stack>
-        ) : (
-          <Alert severity={health.status === 'ok' ? 'success' : 'error'} sx={{ width: '100%' }}>{health.message}</Alert>
-        )}
-        <Button variant="outlined" onClick={checkApi} disabled={health.loading}>Check API again</Button>
-      </Stack>
-    </Box>
-  )
+        <Box id="how-it-works" sx={{ px: { xs: 2.25, sm: 4.5, lg: 8 }, py: { xs: 7, md: 10 }, borderTop: '1px solid #edf1f4', textAlign: 'center' }}><Typography sx={{ color: '#008764', fontSize: 11, letterSpacing: 1, fontWeight: 1000 }}>A CONNECTED DAILY FLOW</Typography><Typography component="h2" sx={{ mt: 1.05, color: '#10244a', fontSize: { xs: 31, sm: 42 }, letterSpacing: -1.55, lineHeight: 1.08, fontWeight: 1000 }}>From customer order to confident next move.</Typography><Typography sx={{ mt: 1.25, mx: 'auto', maxWidth: 620, color: '#6a7f99', lineHeight: 1.65 }}>The demo is designed to show judges a complete real-time story—not isolated screens.</Typography><Box sx={{ mt: { xs: 4, md: 5.5 }, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1.05fr .9fr 1.05fr' }, gap: 2, textAlign: 'left' }}><Paper elevation={0} sx={{ p: 2.6, border: '1px solid #e3ebf1', borderRadius: 2.2, bgcolor: '#fbfdff' }}><Typography sx={{ color: '#10244a', fontWeight: 1000 }}>Customer orders</Typography><Typography sx={{ mt: .65, color: '#6e829a', fontSize: 14, lineHeight: 1.58 }}>A simple menu and QR access lets customers place an order in seconds.</Typography></Paper><Paper elevation={0} sx={{ p: 2.6, border: '1px solid #c8efdf', borderRadius: 2.2, bgcolor: '#effcf6' }}><Typography sx={{ color: '#007c5d', fontWeight: 1000 }}>Kitchen responds</Typography><Typography sx={{ mt: .65, color: '#4c7469', fontSize: 14, lineHeight: 1.58 }}>The vendor sees the ticket, prepares it, and completes it safely.</Typography></Paper><Paper elevation={0} sx={{ p: 2.6, border: '1px solid #eadcfb', borderRadius: 2.2, bgcolor: '#fbf8ff' }}><Typography sx={{ color: '#7026bf', fontWeight: 1000 }}>AI stays grounded</Typography><Typography sx={{ mt: .65, color: '#6d6480', fontSize: 14, lineHeight: 1.58 }}>Stock, sales, and approved stall facts become practical next-step guidance.</Typography></Paper></Box></Box>
+
+        <Box id="demo" sx={{ px: { xs: 2.25, sm: 4.5, lg: 8 }, py: { xs: 7, md: 10 }, bgcolor: '#f4f8fb', borderTop: '1px solid #e7eef3' }}><Stack sx={{ alignItems: 'center', textAlign: 'center' }}><Typography sx={{ color: '#7026bf', fontSize: 11, letterSpacing: 1, fontWeight: 1000 }}>HACKATHON DEMO GUIDE</Typography><Typography component="h2" sx={{ mt: 1.05, color: '#10244a', fontSize: { xs: 31, sm: 42 }, letterSpacing: -1.55, lineHeight: 1.08, fontWeight: 1000 }}>Try both sides in under two minutes.</Typography></Stack><Box sx={{ mt: { xs: 4, md: 5.5 }, display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1.15fr' }, gap: 2.5 }}><Paper elevation={0} sx={{ p: { xs: 2.4, sm: 3.2 }, border: '1px solid #d8e5ed', borderRadius: 2.5, bgcolor: '#fff' }}><Stack direction={{ xs: 'column', sm: 'row' }} spacing={2.4} sx={{ alignItems: { sm: 'center' } }}><Box sx={{ flexShrink: 0, display: 'grid', placeItems: 'center', p: 1.1, border: '1px solid #dce9e5', borderRadius: 2, bgcolor: '#fbfffd' }}><QRCodeSVG value={menuUrl} size={126} includeMargin /></Box><Box><Typography sx={{ color: '#008764', fontSize: 11, letterSpacing: .8, fontWeight: 1000 }}>CUSTOMER EXPERIENCE</Typography><Typography sx={{ mt: .7, color: '#10244a', fontSize: 22, letterSpacing: -.55, fontWeight: 1000 }}>Order from the menu</Typography><Typography sx={{ mt: .6, color: '#6d8199', fontSize: 14, lineHeight: 1.55 }}>Scan on your phone, or open the menu directly on this device.</Typography><Button component={RouterLink} to="/menu" variant="outlined" sx={{ mt: 1.6, borderColor: '#a7dccc', color: '#007c5d', textTransform: 'none', fontWeight: 900 }}>Open customer menu</Button></Box></Stack><Divider sx={{ my: 2.5, borderColor: '#edf1f4' }} /><StepList steps={customerSteps} color="#008764" /></Paper><Paper elevation={0} sx={{ p: { xs: 2.4, sm: 3.2 }, border: '1px solid #d8e5ed', borderRadius: 2.5, bgcolor: '#fff' }}><Typography sx={{ color: '#7026bf', fontSize: 11, letterSpacing: .8, fontWeight: 1000 }}>VENDOR EXPERIENCE</Typography><Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mt: .7, justifyContent: 'space-between' }}><Box><Typography sx={{ color: '#10244a', fontSize: 22, letterSpacing: -.55, fontWeight: 1000 }}>Manage the complete stall flow</Typography><Typography sx={{ mt: .6, maxWidth: 470, color: '#6d8199', fontSize: 14, lineHeight: 1.55 }}>Use the demo vendor account to see live dashboard, kitchen, inventory, AI Manager, and Marketing actions.</Typography></Box><Chip label="DEMO ACCOUNT" sx={{ alignSelf: { xs: 'start', sm: 'center' }, bgcolor: '#f2eaff', color: '#7026bf', fontSize: 10, letterSpacing: .65, fontWeight: 1000 }} /></Stack><Paper elevation={0} sx={{ mt: 2.15, p: 1.65, border: '1px solid #e5daf7', borderRadius: 1.7, bgcolor: '#fbf8ff' }}><Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ justifyContent: 'space-between' }}><Box><Typography sx={{ color: '#8c79a5', fontSize: 10, letterSpacing: .7, fontWeight: 1000 }}>EMAIL</Typography><Typography sx={{ mt: .25, color: '#302344', fontWeight: 900 }}>warungmurni@gmail.com</Typography></Box><Box><Typography sx={{ color: '#8c79a5', fontSize: 10, letterSpacing: .7, fontWeight: 1000 }}>PASSWORD</Typography><Typography sx={{ mt: .25, color: '#302344', fontWeight: 900 }}>warungmurni</Typography></Box></Stack></Paper><Box sx={{ mt: 2.35 }}><StepList steps={vendorSteps} color="#7026bf" /></Box><Button component={RouterLink} to="/vendor/login" variant="contained" sx={{ mt: 2.45, minHeight: 47, borderRadius: 1.4, bgcolor: '#10244a', textTransform: 'none', fontWeight: 1000, '&:hover': { bgcolor: '#1d3456' } }}>Open vendor portal <Box component="span" sx={{ ml: .85 }}>↗</Box></Button></Paper></Box></Box>
+
+        <Box component="footer" sx={{ px: { xs: 2.25, sm: 4.5, lg: 8 }, py: 2.35, borderTop: '1px solid #e7edf2', bgcolor: '#fff' }}><Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { sm: 'center' }, justifyContent: 'space-between' }}><Typography sx={{ color: '#8a9aaf', fontSize: 13 }}>Laku Sitok · AI-assisted daily operations for local food stalls</Typography><Typography sx={{ color: '#8a9aaf', fontSize: 12 }}>OpenAI Build Week demo</Typography></Stack></Box>
+      </Paper>
+    </Container>
+  </Box>
 }
 
 export default WelcomePage

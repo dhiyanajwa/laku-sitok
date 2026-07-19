@@ -1,5 +1,6 @@
 import supabase from '../config/supabase.js'
 import { appError } from '../utils/app-error.js'
+import { assertStallIsOpen } from './stall-availability.service.js'
 
 const validStatuses = new Set(['pending', 'preparing', 'ready', 'completed', 'cancelled'])
 const allowedTransitions = {
@@ -27,6 +28,7 @@ function validateItems(items) {
 }
 
 export async function createOrder(vendorId, input) {
+  await assertStallIsOpen(vendorId)
   const items = validateItems(input.items)
   const { data, error } = await supabase.rpc('create_order', { p_vendor_id: vendorId, p_customer_name: input.customerName?.trim() || null, p_items: items })
   if (error?.code === 'P0001' || error?.code === '22023') throw appError(error.message)
@@ -45,10 +47,10 @@ export async function listOrders(vendorId, status) {
 
 export async function getPublicOrderTracking(trackingToken) {
   if (!trackingTokenPattern.test(trackingToken)) throw appError('This tracking link is invalid or has expired.', 404)
-  const { data, error } = await supabase.from('orders').select('order_number, status, created_at, updated_at, order_items(product_name, quantity)').eq('tracking_token', trackingToken).single()
+  const { data, error } = await supabase.from('orders').select('order_number, total_amount, status, created_at, updated_at, order_items(product_name, unit_price, quantity, subtotal)').eq('tracking_token', trackingToken).single()
   if (error?.code === 'PGRST116') throw appError('This tracking link is invalid or has expired.', 404)
   if (error) throw error
-  return { orderNumber: data.order_number, status: data.status, createdAt: data.created_at, updatedAt: data.updated_at, items: data.order_items.map((item) => ({ productName: item.product_name, quantity: item.quantity })) }
+  return { orderNumber: data.order_number, totalAmount: Number(data.total_amount || 0), status: data.status, createdAt: data.created_at, updatedAt: data.updated_at, items: data.order_items.map((item) => ({ productName: item.product_name, unitPrice: Number(item.unit_price || 0), quantity: item.quantity, subtotal: Number(item.subtotal || 0) })) }
 }
 
 export async function updateOrderStatus(orderId, vendorId, status) {

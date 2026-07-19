@@ -183,7 +183,7 @@ function classifyMessage(message) {
   if (/\bLS-[A-Z0-9-]+\b/i.test(message) || /\border\b.*\b(preparing|ready|completed|cancelled)\b/i.test(normalized)) return 'kitchen_status_preview'
   if (/delayed|late|longest|waiting/.test(normalized)) return 'delayed_orders'
   if (/attention|need(?:s)?\s+my\s+attention/.test(normalized)) return 'attention_summary'
-  if (/how.*(?:did|were|was).*today|today.*(?:sales|revenue|business)|sold.*today|best.*sell|what.*restock/.test(normalized)) return 'daily_summary'
+  if (/how.*(?:did|were|was).*today|today.*(?:sales|revenue|business)|sold.*today|best.*sell|what.*restock|(?:why|how).*?(?:revenue|profit|sales).*?(?:change|today)/.test(normalized)) return 'daily_summary'
   return 'unsupported'
 }
 
