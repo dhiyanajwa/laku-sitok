@@ -13,6 +13,13 @@ const suggestedActions = [
   { label: 'Why did revenue change today?', request: 'Why did revenue change today?' },
 ]
 
+function renderMessageMarkdown(message) {
+  return String(message || '').split(/(\*\*[^*]+\*\*)/g).map((part, index) => {
+    const isBold = part.startsWith('**') && part.endsWith('**')
+    return isBold ? <Box key={index} component="strong" sx={{ color: 'inherit', fontWeight: 900 }}>{part.slice(2, -2)}</Box> : part
+  })
+}
+
 function actionSummary(action) {
   const payload = action.payload || {}
   if (action.actionType === 'ingredient_restock') return `Add ${payload.changeQuantity} ${payload.unit || ''} to ${payload.ingredientName || 'ingredient'}?`
@@ -48,7 +55,7 @@ function ResponseCard({ response }) {
   return <Paper elevation={0} sx={{ p: 1.75, border: '1px solid #e2eaf2', borderRadius: 2, bgcolor: 'var(--ls-surface)' }}>
     <Stack spacing={1}>
       <Stack direction="row" spacing={.8} alignItems="center"><Chip size="small" label={response.type === 'recommendation' ? 'AI ADVISOR' : 'MANAGER'} sx={{ height: 22, bgcolor: 'var(--ls-purple-soft)', color: 'var(--ls-purple)', fontSize: 10, fontWeight: 900 }} /><Typography sx={{ color: 'var(--ls-text)', fontWeight: 900 }}>{response.title}</Typography></Stack>
-      <Typography variant="body2" sx={{ color: 'var(--ls-text-secondary)', whiteSpace: 'pre-wrap', lineHeight: 1.55 }}>{response.message}</Typography>
+      <Typography variant="body2" sx={{ color: 'var(--ls-text-secondary)', whiteSpace: 'pre-wrap', lineHeight: 1.55 }}>{renderMessageMarkdown(response.message)}</Typography>
       {response.action && <Typography variant="caption" sx={{ color: 'var(--ls-purple)', fontWeight: 800 }}>The proposed change is waiting in Pending approvals.</Typography>}
       {(response.sections || []).map((section) => <Box key={section.title}><Typography variant="caption" sx={{ color: 'var(--ls-text-muted)', fontWeight: 900, letterSpacing: .4 }}>{section.title}</Typography><Stack spacing={.5} sx={{ mt: .45 }}>{section.items.map((item, index) => <Typography key={`${item.title}-${index}`} variant="body2" sx={{ color: 'var(--ls-text-secondary)' }}><Box component="span" fontWeight={800}>{item.title}</Box>{item.description ? ` - ${item.description}` : ''}</Typography>)}</Stack></Box>)}
     </Stack>
@@ -160,14 +167,14 @@ function ManagerDrawer({ open, onClose }) {
     }
   }
 
-  return <Drawer anchor="right" open={open} onClose={onClose} slotProps={{ paper: { sx: { width: { xs: '100vw', sm: 540 }, maxWidth: '100vw', left: { xs: 0, sm: 'auto' }, p: 0, bgcolor: 'var(--ls-surface-muted)' } } }}>
-    <Stack sx={{ height: '100%' }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ minHeight: 109, px: 3.75, py: 2.25, color: '#fff', background: 'linear-gradient(112deg, #3c0a63, #69179b)' }}>
+  return <Drawer anchor="right" open={open} onClose={onClose} ModalProps={{ disablePortal: true }} slotProps={{ paper: { sx: { width: { xs: '100dvw', sm: 540 }, maxWidth: '100vw', left: { xs: 0, sm: 'auto' }, height: '100dvh', boxSizing: 'border-box', p: 0, bgcolor: 'var(--ls-surface-muted)' } } }}>
+    <Stack sx={{ height: '100%', minHeight: 0, bgcolor: 'var(--ls-surface-muted)' }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ flexShrink: 0, minHeight: { xs: 92, sm: 109 }, px: { xs: 2.5, sm: 3.75 }, py: { xs: 1.6, sm: 2.25 }, color: '#fff', background: 'linear-gradient(112deg, #3c0a63, #69179b)' }}>
         <Stack direction="row" spacing={1.6} alignItems="center"><Box sx={{ width: 50, height: 50, display: 'grid', placeItems: 'center', border: '1px solid rgba(255,255,255,.16)', borderRadius: 1.4, bgcolor: 'rgba(255,255,255,.1)' }}><VendorIcon name="spark" size={27} /></Box><Box><Typography sx={{ fontSize: 18, fontWeight: 900 }}>Laku AI Manager</Typography><Stack direction="row" spacing={.8} alignItems="center" sx={{ mt: .45 }}><Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#2fe1a1' }} /><Typography variant="caption" sx={{ color: '#f2e7ff', letterSpacing: .45, fontWeight: 900 }}>QUEUE GUARD ACTIVE</Typography></Stack></Box></Stack>
-        <Button aria-label="Close AI Manager" onClick={onClose} sx={{ minWidth: 36, width: 36, height: 36, p: 0, color: '#fff', fontSize: 28, fontWeight: 300 }}>×</Button>
+        <Button aria-label="Close AI Manager" onClick={onClose} sx={{ minWidth: 36, width: 36, height: 36, p: 0, color: '#fff' }}><VendorIcon name="close" size={22} /></Button>
       </Stack>
 
-      <Stack spacing={2.25} sx={{ flex: 1, overflowY: 'auto', p: { xs: 2.5, sm: 3.75 } }}>
+      <Stack spacing={2.25} sx={{ flex: 1, minHeight: 0, overflowY: 'auto', p: { xs: 2.5, sm: 3.75 }, bgcolor: 'var(--ls-surface-muted)' }}>
         {error && <Alert severity="error" onClose={() => setError('')}>{error}</Alert>}
         {!messages.length && <Paper elevation={0} sx={{ maxWidth: '88%', p: 2.3, border: '1px solid #e7edf4', borderRadius: '0 0 22px 22px', bgcolor: 'var(--ls-surface)' }}><Typography sx={{ color: 'var(--ls-text)', lineHeight: 1.62 }}>Good day! I am your Laku AI Manager. How can I help you optimize Warung Murni today?</Typography></Paper>}
         <Box><Typography variant="caption" sx={{ color: 'var(--ls-text-muted)', fontWeight: 900, letterSpacing: .6 }}>PENDING APPROVALS</Typography>{pendingActions.length > 0 ? <Stack spacing={1.4} sx={{ mt: 1.35 }}>{pendingActions.map((action) => <ApprovalCard key={action.id} action={action} busyActionId={busyActionId} onConfirm={confirmAction} onCancel={cancelAction} />)}</Stack> : <Typography variant="body2" sx={{ mt: 1, color: 'var(--ls-text-muted)' }}>No changes are waiting for approval.</Typography>}</Box>
@@ -177,11 +184,11 @@ function ManagerDrawer({ open, onClose }) {
         {loading && <Stack direction="row" spacing={1} alignItems="center"><CircularProgress size={18} sx={{ color: 'var(--ls-purple)' }} /><Typography variant="body2" color="text.secondary">Manager is checking the current business state...</Typography></Stack>}
       </Stack>
 
-      <Box sx={{ p: { xs: 2.5, sm: 3.75 }, borderTop: '1px solid #edf0f4', bgcolor: 'var(--ls-surface)' }}>
+      <Box sx={{ flexShrink: 0, p: { xs: 2.5, sm: 3.75 }, borderTop: '1px solid var(--ls-border-subtle)', bgcolor: 'var(--ls-surface)' }}>
         <Typography variant="caption" sx={{ color: 'var(--ls-text-muted)', letterSpacing: .75, fontWeight: 900 }}>SUGGESTED ACTIONS</Typography>
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1, mt: 1.4 }}>{suggestedActions.map((action) => <Button key={action.label} size="small" variant="outlined" onClick={() => handleSuggestedAction(action)} disabled={loading} sx={{ minHeight: 39, justifyContent: 'flex-start', borderColor: '#ead9ff', borderRadius: 1.25, bgcolor: 'var(--ls-purple-soft)', color: 'var(--ls-purple)', textAlign: 'left', textTransform: 'none', fontWeight: 800, lineHeight: 1.2, '&:hover': { borderColor: '#d4b1ff', bgcolor: '#f4ebff' } }}>{action.label}</Button>)}</Box>
         {showOrderPicker && <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1.5 }}><Select value="" displayEmpty onChange={(event) => selectKitchenOrder(event.target.value)} size="small" fullWidth sx={{ bgcolor: 'var(--ls-surface-muted)', borderRadius: 1.5, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--ls-border)' } }}><MenuItem value="" disabled>Select an active kitchen order</MenuItem>{kitchenOrders.map((order) => <MenuItem key={order.id} value={order.id}>{order.order_number} - {order.status}</MenuItem>)}</Select><Button onClick={() => setShowOrderPicker(false)} sx={{ color: 'var(--ls-text-secondary)', textTransform: 'none' }}>Cancel</Button></Stack>}
-        <Stack direction="row" spacing={1.1} alignItems="center" sx={{ mt: 2.25 }}><TextField inputRef={inputRef} value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendRequest() } }} placeholder="Ask any question about sales or ingredients..." inputProps={{ maxLength: 280, 'aria-label': 'Ask AI Manager' }} fullWidth disabled={loading} sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5, bgcolor: 'var(--ls-surface-muted)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--ls-border)' } }} /><Button aria-label="Send message" variant="contained" onClick={() => sendRequest()} disabled={loading || !input.trim()} sx={{ minWidth: 52, width: 52, height: 52, p: 0, borderRadius: 1.5, bgcolor: 'var(--ls-purple)', fontSize: 21, '&:hover': { bgcolor: '#741fca' } }}>➤</Button></Stack>
+        <Stack direction="row" spacing={1.1} alignItems="center" sx={{ mt: 2.25 }}><TextField inputRef={inputRef} value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendRequest() } }} placeholder="Ask any question about sales or ingredients..." inputProps={{ maxLength: 280, 'aria-label': 'Ask AI Manager' }} fullWidth disabled={loading} sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5, bgcolor: 'var(--ls-surface-muted)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--ls-border)' } }} /><Button aria-label="Send message" variant="contained" onClick={() => sendRequest()} disabled={loading || !input.trim()} sx={{ minWidth: 52, width: 52, height: 52, p: 0, borderRadius: 1.5, bgcolor: 'var(--ls-purple)', '&:hover': { bgcolor: '#741fca' } }}><VendorIcon name="send" size={20} /></Button></Stack>
       </Box>
     </Stack>
   </Drawer>

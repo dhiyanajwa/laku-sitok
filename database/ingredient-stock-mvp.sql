@@ -69,14 +69,14 @@ alter table public.ingredient_stock_movements enable row level security;
 insert into public.products (vendor_id, name, description, category, price, cost_price, stock_mode)
 select id, 'Burger Special', 'Fresh burger with egg and cheese.', 'Meals', 8.50, 4.20, 'ingredient_recipe'
 from public.users
-where email = 'owner@warungmurni.test' and role = 'vendor'
+where email = 'warungmurni@gmail.com' and role = 'vendor'
 on conflict (vendor_id, name) do update set stock_mode = 'ingredient_recipe';
 
 insert into public.inventory (product_id, quantity, reorder_level)
 select product.id, 0, 0
 from public.products product
 join public.users vendor on vendor.id = product.vendor_id
-where vendor.email = 'owner@warungmurni.test' and product.name = 'Burger Special'
+where vendor.email = 'warungmurni@gmail.com' and product.name = 'Burger Special'
 on conflict (product_id) do nothing;
 
 insert into public.ingredients (vendor_id, name, quantity, unit, reorder_level)
@@ -90,7 +90,7 @@ cross join (
     ('Cheese slice', 8.00, 'slices', 4.00),
     ('Burger wrapper', 20.00, 'pieces', 5.00)
 ) as ingredient(name, quantity, unit, reorder_level)
-where vendor.email = 'owner@warungmurni.test' and vendor.role = 'vendor'
+where vendor.email = 'warungmurni@gmail.com' and vendor.role = 'vendor'
 on conflict (vendor_id, name) do nothing;
 
 insert into public.product_recipe_ingredients (product_id, ingredient_id, quantity_per_serving)
@@ -98,7 +98,7 @@ select product.id, ingredient.id, 1
 from public.products product
 join public.users vendor on vendor.id = product.vendor_id
 join public.ingredients ingredient on ingredient.vendor_id = vendor.id
-where vendor.email = 'owner@warungmurni.test'
+where vendor.email = 'warungmurni@gmail.com'
   and product.name = 'Burger Special'
   and ingredient.name in ('Burger bun', 'Burger patty', 'Egg', 'Cheese slice', 'Burger wrapper')
 on conflict (product_id, ingredient_id) do update set quantity_per_serving = excluded.quantity_per_serving;

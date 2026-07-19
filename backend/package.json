@@ -9,8 +9,8 @@
     "start": "node server.js"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Dhiya Najwa Atma binti Drahman",
+  "license": "MIT",
   "type": "module",
   "dependencies": {
     "@supabase/supabase-js": "^2.110.6",

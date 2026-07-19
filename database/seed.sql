@@ -1,5 +1,5 @@
-﻿insert into public.users (name, email, role)
-values ('Warung Murni', 'owner@warungmurni.test', 'vendor')
+insert into public.users (name, email, role)
+values ('Warung Murni', 'warungmurni@gmail.com', 'vendor')
 on conflict (email) do nothing;
 
 insert into public.products (vendor_id, name, description, category, price, cost_price)
@@ -13,7 +13,7 @@ cross join (
     ('Kopi O', 'Traditional black coffee.', 'Drinks', 2.00, 0.50),
     ('Karipap', 'Crispy curry puff.', 'Snacks', 1.50, 0.55)
 ) as product(name, description, category, price, cost_price)
-where vendor.email = 'owner@warungmurni.test'
+where vendor.email = 'warungmurni@gmail.com'
 on conflict (vendor_id, name) do nothing;
 
 insert into public.inventory (product_id, quantity, reorder_level)
@@ -28,22 +28,22 @@ select product.id,
   5
 from public.products as product
 join public.users as vendor on vendor.id = product.vendor_id
-where vendor.email = 'owner@warungmurni.test'
+where vendor.email = 'warungmurni@gmail.com'
 on conflict (product_id) do nothing;
 
 insert into public.orders (order_number, vendor_id, customer_name, total_amount, status, created_at)
 select 'LS-1001', id, 'Aina', 10.50, 'completed', now() - interval '2 days'
-from public.users where email = 'owner@warungmurni.test'
+from public.users where email = 'warungmurni@gmail.com'
 on conflict (order_number) do nothing;
 
 insert into public.orders (order_number, vendor_id, customer_name, total_amount, status, created_at)
 select 'LS-1002', id, 'Hafiz', 10.00, 'completed', now() - interval '1 day'
-from public.users where email = 'owner@warungmurni.test'
+from public.users where email = 'warungmurni@gmail.com'
 on conflict (order_number) do nothing;
 
 insert into public.orders (order_number, vendor_id, customer_name, total_amount, status)
 select 'LS-1003', id, 'Siti', 8.00, 'pending'
-from public.users where email = 'owner@warungmurni.test'
+from public.users where email = 'warungmurni@gmail.com'
 on conflict (order_number) do nothing;
 
 insert into public.order_items (order_id, product_id, product_name, unit_price, unit_cost, quantity, subtotal)
