@@ -76,6 +76,12 @@ Codex with GPT-5.6 was used throughout the Build Week implementation to:
 
 Qwen is the runtime model used inside the product for advisor and marketing copy. It is separate from the use of Codex and GPT-5.6 to build Laku Sitok.
 
+## Development process
+
+The project was guided by the implementation plans in the [markdown](markdown) folder. I used separate Codex tasks to explore individual features and draft focused implementation plans. In the main Codex task, I reviewed and refined those plans against the project's product and architecture documentation—especially [markdown/PROJECT.md](markdown/PROJECT.md) and [markdown/ARCHITECTURE.md](markdown/ARCHITECTURE.md).
+
+This accelerated the workflow by turning broad ideas into reviewable, focused steps before coding started. It reduced rework, made it easier to catch scope or architecture issues early, and let each approved feature move quickly from plan, to implementation, to hands-on testing. It also kept the scope practical for the hackathon: every feature was checked against the intended vendor workflow, technical architecture, and MVP priorities.
+
 ## Run locally
 
 ### Prerequisites
