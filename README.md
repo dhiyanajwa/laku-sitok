@@ -82,6 +82,16 @@ The project was guided by the implementation plans in the [markdown](markdown) f
 
 This accelerated the workflow by turning broad ideas into reviewable, focused steps before coding started. It reduced rework, made it easier to catch scope or architecture issues early, and let each approved feature move quickly from plan, to implementation, to hands-on testing. It also kept the scope practical for the hackathon: every feature was checked against the intended vendor workflow, technical architecture, and MVP priorities.
 
+### Example: planning the AI Manager
+
+For the AI Manager feature, I first used a separate Codex chat to discuss the user flow, agent responsibilities, possible obstacles, and which actions should require vendor approval. I used those discussions to make key product decisions: the AI should be grounded in real sales and inventory data, deterministic services should handle operational data, and the vendor must approve any real change such as restocking or updating an order.
+
+After reviewing the discussion, I adjusted the scope by removing ideas that were too large for the hackathon and adding flows that made the feature more useful for a small food stall.
+
+I then asked GPT-5.6 with high reasoning to turn the agreed direction into a detailed implementation plan. In the main project chat, I reviewed that plan again against `PROJECT.md` and the hackathon scope, checking whether the feature was realistic to finish, whether the approval flow protected the vendor’s control, and whether any important flow was still missing.
+
+Only after that review did I execute the plan with GPT-5.6 using higher reasoning. This approach helped me build the AI Manager as a practical, approval based tool rather than an overly ambitious feature that could not be tested properly within the hackathon. This shows how key decisions were made.
+
 ## Run locally
 
 ### Prerequisites
